@@ -1,0 +1,267 @@
+import {
+  contextTagNames,
+  type Opportunity,
+  type PlaybookSetup,
+  type SopGroup,
+  type Trade,
+} from "@/lib/domain";
+import { computeGrade, countConfirmations } from "@/lib/context-engine";
+
+function tags(enabled: string[]) {
+  return contextTagNames.map((name) => ({
+    name,
+    enabled: enabled.includes(name),
+    weight: name === "Trading Range" ? -1 : 1,
+  }));
+}
+
+export const initialOpportunities: Opportunity[] = [
+  {
+    id: "opp-1",
+    ticker: "NQ",
+    pair: "NQ",
+    setup: "Momentum Break",
+    bias: "Slight Bullish",
+    primaryContext: "Trend continuation above the 20 EMA",
+    session: "Open",
+    status: "Taken",
+    contextTags: tags(["MTR", "BTB", "Breakout", "Micro Channel", "Spike"]),
+    confirmations: 0,
+    grade: "A",
+    entries: [
+      { type: "E1", status: "Taken" },
+      { type: "E2", status: "Taken" },
+      { type: "E3", status: "Taken" },
+    ],
+    riskReward: 2.3,
+    quality: "A",
+    time: "09:41",
+    notes: "Break of high and close above 20 EMA with supportive internals.",
+    resultR: 2.1,
+  },
+  {
+    id: "opp-2",
+    ticker: "ES",
+    pair: "ES",
+    setup: "Bull Flag",
+    bias: "Neutral Bullish",
+    primaryContext: "Pullback after impulse leg",
+    session: "Open",
+    status: "Skipped",
+    contextTags: tags(["BTB", "EMA Divergence", "Trading Range"]),
+    confirmations: 0,
+    grade: "B",
+    entries: [
+      { type: "E1", status: "Taken" },
+      { type: "E2", status: "Skipped", skipReason: "Unsafe Stop" },
+      { type: "E3", status: "Not Formed" },
+    ],
+    riskReward: 1.8,
+    quality: "B",
+    time: "09:36",
+    notes: "Good structure, but stop placement expanded after late entry.",
+    resultR: -0.7,
+  },
+  {
+    id: "opp-3",
+    ticker: "NQ",
+    pair: "NQ",
+    setup: "Opening Drive",
+    bias: "Bullish",
+    primaryContext: "Failed bear attempt into opening continuation",
+    session: "Open",
+    status: "Not Formed",
+    contextTags: tags(["Breakout", "Spike"]),
+    confirmations: 0,
+    grade: "C",
+    entries: [
+      { type: "E1", status: "Waiting" },
+      { type: "E2", status: "Not Formed" },
+      { type: "E3", status: "Not Formed" },
+    ],
+    riskReward: 0,
+    quality: "-",
+    time: "09:28",
+    notes: "Confirmation count never cleared the threshold.",
+  },
+  {
+    id: "opp-4",
+    ticker: "CL",
+    pair: "CL",
+    setup: "Trend Continuation",
+    bias: "Bearish",
+    primaryContext: "Lower high at VWAP, continuation below EMA",
+    session: "Midday",
+    status: "Taken",
+    contextTags: tags(["MTR", "EMA Divergence", "Micro Channel", "BTB"]),
+    confirmations: 0,
+    grade: "A-",
+    entries: [
+      { type: "E1", status: "Taken" },
+      { type: "E2", status: "Taken" },
+      { type: "E3", status: "Not Formed" },
+    ],
+    riskReward: 2.1,
+    quality: "A-",
+    time: "09:15",
+    notes: "Continuation aligned with session bias.",
+    resultR: 1.6,
+  },
+  {
+    id: "opp-5",
+    ticker: "GC",
+    pair: "GC",
+    setup: "Rejection + Retest",
+    bias: "Range",
+    primaryContext: "Rejecting prior value area high",
+    session: "Midday",
+    status: "Skipped",
+    contextTags: tags(["Trading Range", "MTR", "Spike"]),
+    confirmations: 0,
+    grade: "C",
+    entries: [
+      { type: "E1", status: "Skipped", skipReason: "Range" },
+      { type: "E2", status: "Skipped", skipReason: "Range" },
+      { type: "E3", status: "Not Formed" },
+    ],
+    riskReward: 1.6,
+    quality: "B-",
+    time: "08:55",
+    notes: "Rejected cleanly, but context conflicted with range risk.",
+  },
+  {
+    id: "opp-6",
+    ticker: "RTY",
+    pair: "RTY",
+    setup: "Breakout",
+    bias: "Bullish",
+    primaryContext: "Compression into prior high",
+    session: "Close",
+    status: "Taken",
+    contextTags: tags(["Breakout", "BTB", "Micro Channel", "Spike"]),
+    confirmations: 0,
+    grade: "A",
+    entries: [
+      { type: "E1", status: "Taken" },
+      { type: "E2", status: "Taken" },
+      { type: "E3", status: "Skipped", skipReason: "Low Volume" },
+    ],
+    riskReward: 2.5,
+    quality: "A",
+    time: "08:32",
+    notes: "Best late-session structure, reduced size on E3.",
+    resultR: 2.3,
+  },
+].map((opportunity) => {
+  const confirmations = countConfirmations(opportunity.contextTags);
+  return {
+    ...opportunity,
+    confirmations,
+    grade: computeGrade(confirmations, opportunity.entries),
+  };
+});
+
+export const trades: Trade[] = [
+  { id: "t1", ticker: "NQ", setup: "Momentum Break", session: "Open", grade: "A", rMultiple: 2.1, pnl: 840, ruleBreak: false, hour: 9, date: "Mon" },
+  { id: "t2", ticker: "ES", setup: "Bull Flag", session: "Open", grade: "B", rMultiple: -0.7, pnl: -275, ruleBreak: true, hour: 9, date: "Mon" },
+  { id: "t3", ticker: "CL", setup: "Trend Continuation", session: "Midday", grade: "A-", rMultiple: 1.6, pnl: 520, ruleBreak: false, hour: 11, date: "Tue" },
+  { id: "t4", ticker: "RTY", setup: "Breakout", session: "Close", grade: "A", rMultiple: 2.3, pnl: 690, ruleBreak: false, hour: 15, date: "Wed" },
+  { id: "t5", ticker: "GC", setup: "Range Fade", session: "Midday", grade: "C", rMultiple: -1.2, pnl: -410, ruleBreak: true, hour: 12, date: "Thu" },
+  { id: "t6", ticker: "NQ", setup: "Pullback to EMA", session: "Open", grade: "A", rMultiple: 1.9, pnl: 760, ruleBreak: false, hour: 10, date: "Fri" },
+  { id: "t7", ticker: "ES", setup: "Opening Drive", session: "Open", grade: "B+", rMultiple: 0.8, pnl: 310, ruleBreak: false, hour: 9, date: "Fri" },
+];
+
+export const playbookSetups: PlaybookSetup[] = [
+  {
+    id: "pb-1",
+    name: "Momentum Break",
+    context: "Trend alignment with breakout after compression.",
+    active: true,
+    validConditions: [
+      "Price above 20 EMA",
+      "Strong momentum, ATR > 1.2x 20",
+      "Relative strength greater than market",
+    ],
+    invalidConditions: [
+      "Price below 50 EMA",
+      "Within prior day's value area",
+      "News within 30 minutes",
+    ],
+    entryLogic: [
+      "E1: Break of high + close above",
+      "E2: Pullback to 20 EMA + hold",
+      "E3: New high + momentum expansion",
+    ],
+    exitLogic: ["Scale at 1R / 2R", "Trail below 20 EMA", "Time exit if no follow-through by EOD"],
+  },
+  {
+    id: "pb-2",
+    name: "Bull Flag",
+    context: "Impulse leg, controlled pullback, then continuation trigger.",
+    active: true,
+    validConditions: ["Impulse leg is clean", "Pullback holds above midpoint", "Volume dries up on pullback"],
+    invalidConditions: ["Flag retraces more than 70%", "Entry is far from EMA", "Market internals diverge"],
+    entryLogic: ["E1: Break flag high", "E2: Retest holds", "E3: Add only after new high"],
+    exitLogic: ["Partial at measured move", "Scratch under flag low", "No add after failed breakout"],
+  },
+];
+
+export const sopGroups: SopGroup[] = [
+  {
+    title: "Prepare",
+    completed: 4,
+    total: 5,
+    items: [
+      { label: "Review overnight action", checked: true },
+      { label: "Mark key levels", checked: true },
+      { label: "Check economic calendar", checked: true },
+      { label: "Review higher timeframe", checked: true },
+      { label: "Plan 3 high-quality setups", checked: false },
+    ],
+  },
+  {
+    title: "Execute",
+    completed: 4,
+    total: 6,
+    items: [
+      { label: "Trade only playbook setups", checked: true },
+      { label: "Follow E1 / E2 / E3 plan", checked: true },
+      { label: "Manage risk per rules", checked: true },
+      { label: "No rule violations", checked: true },
+      { label: "No overtrading", checked: false },
+      { label: "Stay patient", checked: false },
+    ],
+  },
+  {
+    title: "Review",
+    completed: 2,
+    total: 4,
+    items: [
+      { label: "Log every trade", checked: true },
+      { label: "Grade every opportunity", checked: true },
+      { label: "Note lessons learned", checked: false },
+      { label: "Prepare for tomorrow", checked: false },
+    ],
+  },
+  {
+    title: "Weekly Review",
+    completed: 0,
+    total: 4,
+    items: [
+      { label: "Review performance", checked: false },
+      { label: "Review rule breaks", checked: false },
+      { label: "Update playbook if needed", checked: false },
+      { label: "Set focus for next week", checked: false },
+    ],
+  },
+];
+
+export const equityCurve = [
+  { day: "Mon", equity: 100000, r: 0.8 },
+  { day: "Tue", equity: 100850, r: 1.4 },
+  { day: "Wed", equity: 101520, r: 2.2 },
+  { day: "Thu", equity: 101110, r: -0.9 },
+  { day: "Fri", equity: 102140, r: 2.7 },
+  { day: "Mon", equity: 102780, r: 1.4 },
+  { day: "Tue", equity: 103210, r: 1.1 },
+];
