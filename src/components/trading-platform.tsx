@@ -23,6 +23,7 @@ import {
   CalendarDays,
   Check,
   ChevronDown,
+  ChevronRight,
   CircleHelp,
   ClipboardCheck,
   Database,
@@ -89,6 +90,7 @@ const navItems = [
 
 type ModuleName = (typeof navItems)[number]["label"];
 type StatusTab = "All" | "Taken" | "Skipped" | "Not Formed" | "Watching";
+type JournalFilter = "All" | "Wins" | "Losses" | "Rule Breaks";
 type RiskSettings = {
   riskPerTrade: number;
   maxDailyLoss: number;
@@ -248,6 +250,7 @@ function mapImportedRows(rows: Record<string, string>[], existingCount: number):
 export function TradingPlatform() {
   const [activeNav, setActiveNav] = useState<ModuleName>("Dashboard");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [session, setSession] = useState<SessionName>("Pre-Market");
   const [theme, setTheme] = useState<"hybrid" | "light">("hybrid");
   const [opportunities, setOpportunities] = useState(initialOpportunities);
@@ -517,6 +520,7 @@ export function TradingPlatform() {
             setTheme={setTheme}
             metrics={metrics}
             openMobileNav={() => setMobileNavOpen(true)}
+            openHelp={() => setHelpOpen(true)}
           />
           <div className="thin-scrollbar h-[calc(100vh-76px)] overflow-auto px-2 pb-2">
             {activeNav === "Dashboard" ? <DashboardView {...common} /> : null}
@@ -543,6 +547,9 @@ export function TradingPlatform() {
           event.currentTarget.value = "";
         }}
       />
+      {helpOpen ? (
+        <HelpOverlay close={() => setHelpOpen(false)} goToModule={goToModule} />
+      ) : null}
     </main>
   );
 }
@@ -659,7 +666,15 @@ function OpportunitiesView(props: CommonProps) {
 
 function TradeJournalView(props: CommonProps) {
   const [selectedTradeId, setSelectedTradeId] = useState(trades[0].id);
-  const selectedTrade = trades.find((trade) => trade.id === selectedTradeId) ?? trades[0];
+  const [journalFilter, setJournalFilter] = useState<JournalFilter>("All");
+  const filteredTrades = trades.filter((trade) => {
+    if (journalFilter === "Wins") return trade.rMultiple > 0;
+    if (journalFilter === "Losses") return trade.rMultiple < 0;
+    if (journalFilter === "Rule Breaks") return trade.ruleBreak;
+    return true;
+  });
+  const selectedTrade =
+    filteredTrades.find((trade) => trade.id === selectedTradeId) ?? filteredTrades[0] ?? trades[0];
 
   return (
     <ModuleShell
@@ -672,9 +687,19 @@ function TradeJournalView(props: CommonProps) {
           <div className="mb-3 flex items-center justify-between">
             <SectionTitle>Closed Trades</SectionTitle>
             <Segmented
-              value="All"
+              value={journalFilter}
               options={["All", "Wins", "Losses", "Rule Breaks"]}
-              onChange={(value) => toast.info(`Filter applied: ${value}`)}
+              onChange={(value) => {
+                const nextFilter = value as JournalFilter;
+                setJournalFilter(nextFilter);
+                const nextTrade = trades.find((trade) => {
+                  if (nextFilter === "Wins") return trade.rMultiple > 0;
+                  if (nextFilter === "Losses") return trade.rMultiple < 0;
+                  if (nextFilter === "Rule Breaks") return trade.ruleBreak;
+                  return true;
+                });
+                if (nextTrade) setSelectedTradeId(nextTrade.id);
+              }}
             />
           </div>
           <div className="overflow-x-auto">
@@ -687,7 +712,7 @@ function TradeJournalView(props: CommonProps) {
                 </tr>
               </thead>
               <tbody>
-                {trades.map((trade) => (
+                {filteredTrades.map((trade) => (
                   <tr
                     key={trade.id}
                     onClick={() => setSelectedTradeId(trade.id)}
@@ -1003,12 +1028,27 @@ function ReportsView(props: CommonProps) {
     ["Best Context", props.contextRanking[0]?.name ?? "N/A"],
     ["SOP Completion", `${props.totalSopCompleted}/${props.totalSopItems}`],
   ];
+  function exportReport() {
+    const csv = [
+      ["Period", props.reportPeriod],
+      ...reportRows,
+      ["Summary", "Best execution came from A-grade momentum continuation setups with at least four confirmations."],
+    ]
+      .map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(","))
+      .join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${props.reportPeriod.toLowerCase()}-trading-report.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <ModuleShell
       title="Reports"
       description="Daily, weekly, and monthly performance summaries."
-      actions={<ActionButton icon={Download} onClick={props.onExportXlsx}>Export Report</ActionButton>}
+      actions={<ActionButton icon={Download} onClick={exportReport}>Export Report</ActionButton>}
     >
       <Surface>
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1136,11 +1176,6 @@ function Sidebar({
             );
           })}
         </nav>
-        <div className="m-3 rounded-md border border-white/14 bg-white/[0.03] p-4">
-          <div className="text-[12px] text-white/68">SOP Version</div>
-          <div className="mt-2 text-[20px] font-semibold text-[#2cd8cf]">v2.4.1</div>
-          <div className="mt-1 text-[11px] text-white/54">Updated: May 18, 2025</div>
-        </div>
       </aside>
     </>
   );
@@ -1154,6 +1189,7 @@ function Header({
   setTheme,
   metrics,
   openMobileNav,
+  openHelp,
 }: {
   activeNav: ModuleName;
   session: SessionName;
@@ -1162,6 +1198,7 @@ function Header({
   setTheme: (theme: "hybrid" | "light") => void;
   metrics: { drawdown: number };
   openMobileNav: () => void;
+  openHelp: () => void;
 }) {
   return (
     <header className="flex h-[76px] items-center gap-6 border-b border-[#dbe2df] bg-[#071b20] px-4 text-white max-[760px]:h-auto max-[760px]:flex-wrap max-[760px]:py-3">
@@ -1220,11 +1257,153 @@ function Header({
         {theme === "hybrid" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
       </button>
       <Bell className="h-5 w-5 text-white/72" />
-      <CircleHelp className="h-5 w-5 text-white/72" />
+      <button
+        onClick={openHelp}
+        className="rounded-full border border-white/14 p-2 text-white/74 hover:bg-white/8"
+        aria-label="Open help"
+      >
+        <CircleHelp className="h-4 w-4" />
+      </button>
       <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/60 text-[14px] font-semibold">
         TR
       </div>
     </header>
+  );
+}
+
+function HelpOverlay({
+  close,
+  goToModule,
+}: {
+  close: () => void;
+  goToModule: (module: ModuleName) => void;
+}) {
+  const helpSections = [
+    {
+      title: "Daily workflow",
+      items: [
+        "Start on Dashboard and follow the Decision Workflow rail.",
+        "Create or import opportunities before the session starts.",
+        "Confirm context, grade the idea, plan E1/E2/E3, then record Taken, Skipped, or Not Formed.",
+      ],
+    },
+    {
+      title: "Opportunity grading",
+      items: [
+        "Open Context Engine and toggle independent context tags.",
+        "Confirmation count and Auto Grade update automatically.",
+        "Trading Range is treated as a negative context weight.",
+      ],
+    },
+    {
+      title: "Entry decisions",
+      items: [
+        "Use Playbook to compare valid and invalid conditions.",
+        "Set E1, E2, and E3 as Waiting, Taken, Skipped, or Not Formed.",
+        "If an entry is skipped, select the skip reason immediately.",
+      ],
+    },
+    {
+      title: "Review loop",
+      items: [
+        "Use Trade Journal after the session to review execution and rule breaks.",
+        "Use Analytics to find weak contexts, hours, sessions, and grades.",
+        "Use Reports for daily, weekly, and monthly summaries.",
+      ],
+    },
+    {
+      title: "Import and export",
+      items: [
+        "Upload CSV, XLSX, or XLS from Dashboard, Opportunities, or Backtest DB.",
+        "Expected columns include Ticker, Setup, Bias, Primary Context, Session, R:R, and Notes.",
+        "Export opportunities, journal data, analytics, and reports from their module actions.",
+      ],
+    },
+  ];
+
+  function jump(module: ModuleName) {
+    goToModule(module);
+    close();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-[#071b20]/68 p-4 backdrop-blur-sm">
+      <div className="mx-auto flex max-h-[calc(100vh-32px)] max-w-5xl flex-col overflow-hidden rounded-md border border-[#dbe2df] bg-white shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-[#dbe2df] p-5">
+          <div>
+            <div className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#0f9f95]">
+              Help
+            </div>
+            <h2 className="mt-1 text-[22px] font-semibold tracking-[-0.02em]">
+              How to use Trading Intelligence
+            </h2>
+            <p className="mt-1 max-w-2xl text-[13px] leading-5 text-[#66746f]">
+              Keep each idea moving through the same sequence: plan, confirm, grade, execute,
+              review, then improve the playbook.
+            </p>
+          </div>
+          <button
+            onClick={close}
+            className="rounded-md border border-[#dbe2df] p-2 text-[#66746f] hover:bg-[#f5f7f4]"
+            aria-label="Close help"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="thin-scrollbar overflow-auto p-5">
+          <div className="grid grid-cols-[1fr_260px] gap-4 max-[900px]:grid-cols-1">
+            <div className="space-y-3">
+              {helpSections.map((section) => (
+                <div key={section.title} className="rounded-md border border-[#dbe2df] bg-[#fbfcfa] p-4">
+                  <h3 className="text-[14px] font-semibold">{section.title}</h3>
+                  <div className="mt-3 space-y-2">
+                    {section.items.map((item) => (
+                      <div key={item} className="flex gap-2 text-[13px] leading-5 text-[#34413d]">
+                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#0f9f95]" />
+                        <span>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="space-y-3">
+              <div className="rounded-md border border-[#dbe2df] bg-white p-4">
+                <h3 className="text-[14px] font-semibold">Quick navigation</h3>
+                <div className="mt-3 grid gap-2">
+                  {[
+                    "Dashboard",
+                    "Opportunities",
+                    "Context Engine",
+                    "Playbook",
+                    "Trade Journal",
+                    "Analytics",
+                    "Reports",
+                    "Settings",
+                  ].map((module) => (
+                    <button
+                      key={module}
+                      onClick={() => jump(module as ModuleName)}
+                      className="flex h-9 items-center justify-between rounded-md border border-[#dbe2df] px-3 text-left text-[12px] font-semibold text-[#263331] hover:border-[#89ccc6] hover:bg-[#effaf8]"
+                    >
+                      {module}
+                      <ChevronRight className="h-3.5 w-3.5 text-[#0f9f95]" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-md border border-[#b7d5d2] bg-[#effaf8] p-4">
+                <h3 className="text-[14px] font-semibold text-[#08746f]">Best daily habit</h3>
+                <p className="mt-2 text-[13px] leading-5 text-[#34413d]">
+                  Do not skip the review step. The app is designed to make the next day better by
+                  connecting skipped entries, rule breaks, and context quality.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
