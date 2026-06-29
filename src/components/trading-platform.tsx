@@ -96,8 +96,100 @@ type RiskSettings = {
   maxTrades: number;
   minR: number;
 };
+type WorkflowStep = {
+  key: string;
+  label: string;
+  module: ModuleName;
+  metric: (opportunity: Opportunity) => string;
+};
 
 const statusTabs: StatusTab[] = ["All", "Taken", "Skipped", "Not Formed", "Watching"];
+const workflowSteps: WorkflowStep[] = [
+  {
+    key: "opportunity",
+    label: "Opportunity",
+    module: "Opportunities",
+    metric: (opportunity) => opportunity.status,
+  },
+  {
+    key: "primary-context",
+    label: "Primary Context",
+    module: "Opportunities",
+    metric: (opportunity) => opportunity.bias,
+  },
+  {
+    key: "confirmations",
+    label: "Confirmations",
+    module: "Context Engine",
+    metric: (opportunity) => `${opportunity.confirmations}/7`,
+  },
+  {
+    key: "grade",
+    label: "Grade",
+    module: "Context Engine",
+    metric: (opportunity) => opportunity.grade,
+  },
+  {
+    key: "entry",
+    label: "Entry Plan",
+    module: "Playbook",
+    metric: (opportunity) =>
+      `${opportunity.entries.filter((entry) => entry.status !== "Waiting").length}/3`,
+  },
+  {
+    key: "decision",
+    label: "Decision",
+    module: "Opportunities",
+    metric: (opportunity) => opportunity.status,
+  },
+  {
+    key: "review",
+    label: "Review",
+    module: "Trade Journal",
+    metric: (opportunity) => (opportunity.resultR ? `${opportunity.resultR}R` : "Open"),
+  },
+];
+
+function workflowIndex(opportunity: Opportunity) {
+  if (opportunity.status === "Taken" || opportunity.status === "Skipped") return 6;
+  if (opportunity.entries.some((entry) => entry.status !== "Waiting")) return 5;
+  if (opportunity.confirmations >= 3) return 4;
+  if (opportunity.confirmations > 0) return 2;
+  return 1;
+}
+
+function nextAction(opportunity: Opportunity) {
+  if (opportunity.confirmations < 3) {
+    return {
+      title: "Confirm the setup",
+      detail: "Tag the independent context signals before grading the idea.",
+      module: "Context Engine" as ModuleName,
+      action: "Open Context Engine",
+    };
+  }
+  if (opportunity.entries.every((entry) => entry.status === "Waiting")) {
+    return {
+      title: "Plan E1 / E2 / E3",
+      detail: "Set the entry sequence and skip rules before the trade is taken.",
+      module: "Playbook" as ModuleName,
+      action: "Open Playbook",
+    };
+  }
+  if (opportunity.status === "Watching") {
+    return {
+      title: "Record the decision",
+      detail: "Mark the opportunity as taken, skipped, or not formed.",
+      module: "Opportunities" as ModuleName,
+      action: "Open Opportunity",
+    };
+  }
+  return {
+    title: "Review execution",
+    detail: "Move the completed decision into review and capture the lesson.",
+    module: "Trade Journal" as ModuleName,
+    action: "Open Journal",
+  };
+}
 
 function normalizeOpportunity(opportunity: Opportunity): Opportunity {
   const confirmations = countConfirmations(opportunity.contextTags);
@@ -507,26 +599,32 @@ type CommonProps = {
 
 function DashboardView(props: CommonProps) {
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_292px] gap-2 max-[1180px]:grid-cols-1">
-      <div className="space-y-2">
-        <DailyPlan
-          totalSopCompleted={props.totalSopCompleted}
-          totalSopItems={props.totalSopItems}
-          riskSettings={props.riskSettings}
-        />
-        <div className="grid grid-cols-[minmax(0,1fr)_400px] gap-2 max-[1260px]:grid-cols-1">
-          <OpportunityQueue {...props} compact />
-          <PlaybookInspector {...props} />
+    <div className="space-y-2">
+      <WorkflowRail opportunity={props.selectedOpportunity} goToModule={props.goToModule} />
+      <div className="grid grid-cols-[minmax(0,1fr)_292px] gap-2 max-[1180px]:grid-cols-1">
+        <div className="space-y-2">
+          <DailyPlan
+            totalSopCompleted={props.totalSopCompleted}
+            totalSopItems={props.totalSopItems}
+            riskSettings={props.riskSettings}
+          />
+          <div className="grid grid-cols-[minmax(0,1fr)_400px] gap-2 max-[1260px]:grid-cols-1">
+            <OpportunityQueue {...props} compact />
+            <PlaybookInspector {...props} />
+          </div>
+          <SkipReasons opportunities={props.opportunities} />
+          <SopChecklist
+            groups={props.sopGroups}
+            toggleItem={props.toggleSopItem}
+            completed={props.totalSopCompleted}
+            total={props.totalSopItems}
+          />
         </div>
-        <SkipReasons opportunities={props.opportunities} />
-        <SopChecklist
-          groups={props.sopGroups}
-          toggleItem={props.toggleSopItem}
-          completed={props.totalSopCompleted}
-          total={props.totalSopItems}
-        />
+        <div className="space-y-2">
+          <NextActionPanel opportunity={props.selectedOpportunity} goToModule={props.goToModule} />
+          <AnalyticsRail {...props} />
+        </div>
       </div>
-      <AnalyticsRail {...props} />
     </div>
   );
 }
@@ -545,10 +643,12 @@ function OpportunitiesView(props: CommonProps) {
     >
       <div className="grid grid-cols-[1fr_330px] gap-2 max-[1120px]:grid-cols-1">
         <div className="space-y-2">
+          <WorkflowRail opportunity={props.selectedOpportunity} goToModule={props.goToModule} />
           <FilterBar {...props} />
           <OpportunityQueue {...props} />
         </div>
         <div className="space-y-2">
+          <JourneySummary {...props} />
           <NewOpportunityForm onCreate={props.addOpportunity} />
           <OpportunityDetail {...props} />
         </div>
@@ -629,6 +729,9 @@ function TradeJournalView(props: CommonProps) {
             </button>
           </div>
         </Surface>
+      </div>
+      <div className="mt-2">
+        <WorkflowRail opportunity={props.selectedOpportunity} goToModule={props.goToModule} />
       </div>
     </ModuleShell>
   );
@@ -787,6 +890,7 @@ function ContextEngineView(props: CommonProps) {
       description="Independent boolean tags auto-count confirmations and compute grade."
       actions={<ActionButton icon={Check} onClick={() => toast.success("Context model saved")}>Save Engine</ActionButton>}
     >
+      <WorkflowRail opportunity={props.selectedOpportunity} goToModule={props.goToModule} />
       <div className="grid grid-cols-[1fr_360px] gap-2 max-[1040px]:grid-cols-1">
         <Surface>
           <div className="flex items-center justify-between">
@@ -1146,6 +1250,168 @@ function ModuleShell({
       </div>
       {children}
     </div>
+  );
+}
+
+function WorkflowRail({
+  opportunity,
+  goToModule,
+}: {
+  opportunity: Opportunity;
+  goToModule: (module: ModuleName) => void;
+}) {
+  const activeIndex = workflowIndex(opportunity);
+
+  return (
+    <Surface>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <SectionTitle>Decision Workflow</SectionTitle>
+          <div className="mt-1 text-[12px] text-[#66746f]">
+            {opportunity.ticker} · {opportunity.setup}
+          </div>
+        </div>
+        <GradeBadge grade={opportunity.grade} />
+      </div>
+      <div className="mt-3 grid grid-cols-7 gap-1 max-[980px]:grid-cols-4 max-[640px]:grid-cols-2">
+        {workflowSteps.map((step, index) => {
+          const done = index < activeIndex;
+          const active = index === activeIndex;
+          return (
+            <button
+              key={step.key}
+              onClick={() => goToModule(step.module)}
+              className={cn(
+                "min-h-[70px] rounded-md border p-2 text-left transition",
+                done && "border-[#b7d5d2] bg-[#effaf8]",
+                active && "border-[#0f9f95] bg-white shadow-[inset_0_0_0_1px_#0f9f95]",
+                !done && !active && "border-[#dbe2df] bg-[#fbfcfa] hover:bg-[#f5f7f4]",
+              )}
+            >
+              <div className="flex items-center justify-between">
+                <span
+                  className={cn(
+                    "flex h-5 w-5 items-center justify-center rounded-full border text-[11px] font-semibold",
+                    done && "border-[#0f9f95] bg-[#0f9f95] text-white",
+                    active && "border-[#0f9f95] text-[#08746f]",
+                    !done && !active && "border-[#cfd8d4] text-[#66746f]",
+                  )}
+                >
+                  {done ? <Check className="h-3 w-3" /> : index + 1}
+                </span>
+                <span className="text-[11px] font-semibold text-[#66746f]">
+                  {step.metric(opportunity)}
+                </span>
+              </div>
+              <div className="mt-2 text-[12px] font-semibold text-[#263331]">{step.label}</div>
+              <div className="mt-0.5 text-[11px] text-[#66746f]">{step.module}</div>
+            </button>
+          );
+        })}
+      </div>
+    </Surface>
+  );
+}
+
+function NextActionPanel({
+  opportunity,
+  goToModule,
+}: {
+  opportunity: Opportunity;
+  goToModule: (module: ModuleName) => void;
+}) {
+  const action = nextAction(opportunity);
+
+  return (
+    <Surface>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <SectionTitle>Next Action</SectionTitle>
+          <div className="mt-3 text-[15px] font-semibold text-[#17211f]">{action.title}</div>
+          <p className="mt-1 text-[12px] leading-5 text-[#66746f]">{action.detail}</p>
+        </div>
+        <span className="rounded-md border border-[#dbe2df] bg-[#fbfcfa] px-2 py-1 text-[11px] font-semibold text-[#66746f]">
+          {opportunity.ticker}
+        </span>
+      </div>
+      <button
+        onClick={() => goToModule(action.module)}
+        className="mt-4 h-9 w-full rounded-md bg-[#0f9f95] text-[12px] font-semibold text-white hover:bg-[#08746f]"
+      >
+        {action.action}
+      </button>
+      <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[11px]">
+        <div className="rounded-md bg-[#f5f7f4] p-2">
+          <div className="font-semibold">{opportunity.confirmations}/7</div>
+          <div className="text-[#66746f]">Confirm</div>
+        </div>
+        <div className="rounded-md bg-[#f5f7f4] p-2">
+          <div className="font-semibold">{opportunity.grade}</div>
+          <div className="text-[#66746f]">Grade</div>
+        </div>
+        <div className="rounded-md bg-[#f5f7f4] p-2">
+          <div className="font-semibold">
+            {opportunity.entries.filter((entry) => entry.status !== "Waiting").length}/3
+          </div>
+          <div className="text-[#66746f]">Entries</div>
+        </div>
+      </div>
+    </Surface>
+  );
+}
+
+function JourneySummary(props: CommonProps) {
+  const counts = {
+    planned: props.opportunities.filter((opportunity) => opportunity.status === "Watching").length,
+    taken: props.opportunities.filter((opportunity) => opportunity.status === "Taken").length,
+    skipped: props.opportunities.filter((opportunity) => opportunity.status === "Skipped").length,
+    review: trades.length,
+  };
+
+  return (
+    <Surface>
+      <SectionTitle>Daily Flow</SectionTitle>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <FlowTile label="Watchlist" value={counts.planned} onClick={() => props.setStatusTab("Watching")} />
+        <FlowTile label="Taken" value={counts.taken} onClick={() => props.setStatusTab("Taken")} />
+        <FlowTile label="Skipped" value={counts.skipped} onClick={() => props.setStatusTab("Skipped")} />
+        <FlowTile label="Reviews" value={counts.review} onClick={() => props.goToModule("Trade Journal")} />
+      </div>
+      <div className="mt-3 rounded-md border border-[#dbe2df] bg-[#fbfcfa] p-3">
+        <div className="text-[12px] font-semibold text-[#263331]">Primary path</div>
+        <div className="mt-2 flex flex-wrap gap-1 text-[11px] text-[#66746f]">
+          {workflowSteps.map((step) => (
+            <button
+              key={step.key}
+              onClick={() => props.goToModule(step.module)}
+              className="rounded border border-[#dbe2df] bg-white px-2 py-1 hover:border-[#89ccc6] hover:text-[#08746f]"
+            >
+              {step.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </Surface>
+  );
+}
+
+function FlowTile({
+  label,
+  value,
+  onClick,
+}: {
+  label: string;
+  value: number;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="rounded-md border border-[#dbe2df] bg-[#fbfcfa] p-3 text-left hover:border-[#89ccc6] hover:bg-[#effaf8]"
+    >
+      <div className="text-[20px] font-semibold tracking-[-0.02em]">{value}</div>
+      <div className="mt-1 text-[12px] text-[#66746f]">{label}</div>
+    </button>
   );
 }
 

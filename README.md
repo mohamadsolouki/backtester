@@ -30,6 +30,19 @@ Current Vercel deployment:
 https://backtester-teal.vercel.app
 ```
 
+## Intended User Journey
+
+1. Start in `Dashboard` to check the daily plan, risk rules, SOP completion, and next action.
+2. Use `Opportunities` to create or import ideas before they become trades.
+3. Use `Context Engine` to tag independent confirmations and let the app auto-count confirmations and auto-grade the opportunity.
+4. Use `Playbook` to compare the setup against valid/invalid conditions and set E1/E2/E3 entry states.
+5. Return to `Opportunities` to mark the decision as Taken, Skipped, or Not Formed.
+6. Use `Trade Journal` to review execution quality and capture the lesson.
+7. Use `Analytics` and `Reports` to review win rate, expectancy, context quality, session quality, and rule breaks.
+8. Use `Settings` to tune risk limits and import mappings.
+
+The dashboard workflow rail mirrors this path so the user always has a clear next step.
+
 ## Environment
 
 Create `.env` from `.env.example`:
