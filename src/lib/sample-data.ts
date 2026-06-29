@@ -15,7 +15,7 @@ function tags(enabled: string[]) {
   }));
 }
 
-export const initialOpportunities: Opportunity[] = [
+const opportunitySeed: Opportunity[] = [
   {
     id: "opp-1",
     ticker: "NQ",
@@ -152,7 +152,9 @@ export const initialOpportunities: Opportunity[] = [
     notes: "Best late-session structure, reduced size on E3.",
     resultR: 2.3,
   },
-].map((opportunity) => {
+];
+
+export const initialOpportunities: Opportunity[] = opportunitySeed.map((opportunity) => {
   const confirmations = countConfirmations(opportunity.contextTags);
   return {
     ...opportunity,
