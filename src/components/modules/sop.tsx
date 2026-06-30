@@ -72,7 +72,7 @@ export function SopView({ documents }: { documents: SerializedDoc[] }) {
 
   return (
     <ModuleShell
-      title="SOP"
+      title="Routine"
       description="Versioned standard operating procedures for daily trading discipline."
       actions={documents.length === 0 ? <ActionButton icon={Plus} onClick={() => setShowCreate(true)}>Create SOP</ActionButton> : undefined}
     >
@@ -92,7 +92,7 @@ export function SopView({ documents }: { documents: SerializedDoc[] }) {
           </div>
           <div className="mt-4 grid grid-cols-3 gap-3 max-[768px]:grid-cols-1">
             {groups.map((group, gi) => (
-              <div key={group.title} className="rounded-md border border-[#dbe2df] p-3">
+              <div key={group.title} className="rounded-md border border-[var(--line)] p-3">
                 <div className="text-[12px] font-semibold uppercase">{group.title}</div>
                 <div className="mt-2 space-y-2">
                   {group.items.map((item, ii) => (
@@ -105,8 +105,8 @@ export function SopView({ documents }: { documents: SerializedDoc[] }) {
               </div>
             ))}
           </div>
-          <div className="mt-2 text-[12px] text-[#66746f]">{totalChecked} / {totalItems} completed today</div>
-          <button onClick={handleCreate} disabled={pending} className="mt-4 h-9 w-full rounded-md bg-[#0f9f95] text-[12px] font-semibold text-white disabled:opacity-50">
+          <div className="mt-2 text-[12px] text-[var(--muted)]">{totalChecked} / {totalItems} completed today</div>
+          <button onClick={handleCreate} disabled={pending} className="mt-4 h-9 w-full rounded-md bg-[var(--teal)] text-[12px] font-semibold text-white disabled:opacity-50">
             {pending ? "Saving..." : "Save SOP"}
           </button>
         </Surface>
@@ -154,13 +154,13 @@ function SopDocumentCard({ doc }: { doc: SerializedDoc }) {
     <Surface>
       <div className="flex items-center justify-between">
         <SectionTitle>{doc.title}</SectionTitle>
-        <span className="text-[12px] font-semibold text-[#08746f]">
+        <span className="text-[12px] font-semibold text-[var(--teal-dark)]">
           v{doc.versions[0]?.version ?? "1.0.0"} · {totalChecked}/{totalItems} today
         </span>
       </div>
       <div className="mt-3 grid grid-cols-3 gap-3 max-[768px]:grid-cols-1">
         {groups.map((group, gi) => (
-          <div key={group.title} className="rounded-md border border-[#dbe2df] p-3">
+          <div key={group.title} className="rounded-md border border-[var(--line)] p-3">
             <div className="text-[12px] font-semibold uppercase">{group.title}</div>
             <div className="mt-2 space-y-2">
               {group.items.map((item, ii) => (
@@ -174,22 +174,22 @@ function SopDocumentCard({ doc }: { doc: SerializedDoc }) {
         ))}
       </div>
       {doc.versions[0]?.changeLog && (
-        <div className="mt-3 rounded-md bg-[#f5f7f4] p-3 text-[12px] text-[#34413d]">
+        <div className="mt-3 rounded-md bg-[var(--panel-soft)] p-3 text-[12px] text-[var(--ink)]">
           <span className="font-semibold">Latest changelog: </span>{doc.versions[0].changeLog}
         </div>
       )}
       {dirty && (
-        <div className="mt-3 flex items-center gap-2 border-t border-[#edf1ef] pt-3">
+        <div className="mt-3 flex items-center gap-2 border-t border-[var(--line)] pt-3">
           <input
             value={changeLog}
             onChange={(e) => setChangeLog(e.target.value)}
             placeholder="What changed in this version?"
-            className="h-9 flex-1 rounded-md border border-[#cfd8d4] bg-white px-3 text-[12px]"
+            className="h-9 flex-1 rounded-md border border-[var(--line)] bg-[var(--panel)] px-3 text-[12px] text-[var(--ink)] outline-none focus:border-[var(--teal)]"
           />
           <button
             onClick={publish}
             disabled={pending}
-            className="h-9 shrink-0 rounded-md bg-[#0f9f95] px-4 text-[12px] font-semibold text-white disabled:opacity-50"
+            className="h-9 shrink-0 rounded-md bg-[var(--teal)] px-4 text-[12px] font-semibold text-white disabled:opacity-50"
           >
             {pending ? "Publishing..." : "Publish New Version"}
           </button>

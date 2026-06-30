@@ -5,6 +5,7 @@ import { computeEquityCurve } from "@/lib/utils";
 import { DashboardView } from "@/components/modules/dashboard";
 import { parseDateRangeSearchParams, sessionsToDbValues, type DateRangeSearchParams } from "@/lib/date-range";
 import type { SessionName as DbSessionName } from "@prisma/client";
+import { getUserSettings } from "@/app/actions/settings";
 
 export default async function DashboardPage({
   searchParams,
@@ -21,7 +22,7 @@ export default async function DashboardPage({
       ? { ...(range.from ? { gte: range.from } : {}), ...(range.to ? { lte: range.to } : {}) }
       : undefined;
 
-  const [opportunities, trades, playbooks] = await Promise.all([
+  const [opportunities, trades, playbooks, settings] = await Promise.all([
     prisma.opportunity.findMany({
       where: {
         userId,
@@ -47,6 +48,7 @@ export default async function DashboardPage({
       where: { userId, active: true },
       orderBy: { createdAt: "desc" },
     }),
+    getUserSettings(),
   ]);
 
   const rValues = trades.map((t) => Number(t.rMultiple));
@@ -77,6 +79,7 @@ export default async function DashboardPage({
       playbooks={JSON.parse(JSON.stringify(playbooks))}
       metrics={metrics}
       equityCurve={equityCurve}
+      showOnboarding={!settings.onboardingSeen}
     />
   );
 }

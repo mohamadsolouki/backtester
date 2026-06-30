@@ -1,9 +1,9 @@
 /**
  * MetaTrader trade history parser.
  *
- * Handles MT4 HTML statements, MT5 XML exports, and generic CSV files,
- * normalising them into a common ParsedTrade format.  Runs server-side
- * in Node.js with zero external dependencies.
+ * Handles MT4 HTML statements, MT5 XML exports, MT5 "Trade History Report"
+ * Excel exports, and generic CSV files, normalising them into a common
+ * ParsedTrade format.
  */
 
 // ---------------------------------------------------------------------------
@@ -30,7 +30,7 @@ export type ParsedTrade = {
 export type ParseResult = {
   trades: ParsedTrade[];
   errors: string[];
-  format: "mt4-html" | "mt5-xml" | "csv" | "unknown";
+  format: "mt4-html" | "mt5-xml" | "mt5-xlsx" | "csv" | "unknown";
 };
 
 // ---------------------------------------------------------------------------
@@ -367,6 +367,96 @@ export function parseMT5Xml(xml: string): ParseResult {
   }
 
   return { trades, errors, format: "mt5-xml" };
+}
+
+// ---------------------------------------------------------------------------
+// MT5 Excel "Trade History Report" Parser
+// ---------------------------------------------------------------------------
+//
+// The standard MT5 terminal "Report" -> "Save as report" Excel export packs
+// three tables into one sheet, stacked vertically: Positions, Orders, and
+// Deals (followed by a Results summary). Of the three, "Positions" is the
+// one that matters here — each row is already a single closed position with
+// matched open/close price, S/L, T/P, commission, swap, and profit, which
+// maps directly onto our per-position Trade model. Orders/Deals are the
+// lower-level order- and execution-level records MT5 also logs (useful for
+// MT5's own auditing, not for journaling individual trades) and are skipped.
+//
+// Column order under the "Positions" header:
+//   0 Time (open)  1 Position (ticket)  2 Symbol  3 Type  4 Volume
+//   5 Price (open) 6 S/L  7 T/P  8 Time (close)  9 Price (close)
+//  10 Commission  11 Swap  12 Profit
+
+type SheetCell = string | number | undefined | null;
+
+function cellString(value: SheetCell): string {
+  return value === undefined || value === null ? "" : String(value).trim();
+}
+
+function cellNumber(value: SheetCell): number {
+  if (typeof value === "number") return value;
+  return toNumber(cellString(value));
+}
+
+/**
+ * Parses rows already extracted from the workbook (via
+ * `XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true })` in the
+ * browser) — kept separate from the actual `xlsx` read so this module's
+ * other parsers stay dependency-free.
+ */
+export function parseMT5ExcelRows(rows: SheetCell[][]): ParseResult {
+  const trades: ParsedTrade[] = [];
+  const errors: string[] = [];
+
+  const sectionStart = rows.findIndex((row) => cellString(row[0]).toLowerCase() === "positions");
+  if (sectionStart === -1) {
+    errors.push('Could not find a "Positions" section in the Excel report. Expected an MT5 "Trade History Report" export.');
+    return { trades, errors, format: "mt5-xlsx" };
+  }
+
+  // sectionStart + 1 is the column header row ("Time", "Position", "Symbol", ...) — data starts after it.
+  for (let i = sectionStart + 2; i < rows.length; i++) {
+    const row = rows[i];
+    const first = cellString(row[0]);
+    if (!first) break; // blank row marks the end of the Positions section
+    if (first.toLowerCase() === "orders") break;
+
+    const type = cellString(row[3]);
+    if (!isTradeLine(type)) continue;
+
+    const openedAt = parseDate(first);
+    if (!openedAt) {
+      errors.push(`Row ${i + 1} (position ${cellString(row[1])}): invalid open time "${first}"`);
+      continue;
+    }
+
+    const closedAt = parseDate(cellString(row[8]));
+    const sl = cellNumber(row[6]);
+    const tp = cellNumber(row[7]);
+
+    trades.push({
+      ticket: cellString(row[1]),
+      symbol: cellString(row[2]),
+      direction: toDirection(type),
+      volume: cellNumber(row[4]),
+      entryPrice: cellNumber(row[5]),
+      exitPrice: cellNumber(row[9]),
+      stopLoss: sl === 0 ? null : sl,
+      takeProfit: tp === 0 ? null : tp,
+      openedAt,
+      closedAt,
+      commission: cellNumber(row[10]),
+      swap: cellNumber(row[11]),
+      profit: cellNumber(row[12]),
+      comment: "",
+    });
+  }
+
+  if (trades.length === 0 && errors.length === 0) {
+    errors.push("No closed positions found in the Positions section.");
+  }
+
+  return { trades, errors, format: "mt5-xlsx" };
 }
 
 // ---------------------------------------------------------------------------

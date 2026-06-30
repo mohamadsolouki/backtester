@@ -10,7 +10,7 @@ export function ThemeProvider({
   defaultTheme?: string;
 }) {
   return (
-    <NextThemesProvider attribute="class" defaultTheme={defaultTheme ?? "dark"} enableSystem={false}>
+    <NextThemesProvider attribute="class" defaultTheme={defaultTheme ?? "light"} enableSystem={false}>
       {children}
     </NextThemesProvider>
   );

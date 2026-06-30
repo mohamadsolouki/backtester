@@ -86,7 +86,7 @@ export function ReportsView({ trades }: { trades: SerializedTrade[] }) {
               <Kpi label="Trades" value={String(periodTrades.length)} />
               <Kpi label="Rule Breaks" value={String(stats.ruleBreaks)} />
             </div>
-            <div className="mt-4 rounded-md border border-[#dbe2df] bg-[#fbfcfa] p-4 text-[13px] leading-6 text-[#34413d]">
+            <div className="mt-4 rounded-md border border-[var(--line)] bg-[var(--panel-soft)] p-4 text-[13px] leading-6 text-[var(--ink)]">
               <strong>Summary:</strong> {periodTrades.length} trade{periodTrades.length === 1 ? "" : "s"} this {period.toLowerCase()} period,
               most traded ticker was <strong>{stats.bestTicker}</strong>. Net result: {formatCurrency(stats.pnl)}{" "}
               with {stats.ruleBreaks} rule break{stats.ruleBreaks === 1 ? "" : "s"}.

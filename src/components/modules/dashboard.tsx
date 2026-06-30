@@ -13,6 +13,7 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { Surface, SectionTitle, Kpi, StatusPill } from "@/components/ui";
 import { formatCurrency, formatPercent, cn } from "@/lib/utils";
+import { OnboardingBanner } from "@/components/modules/onboarding-banner";
 
 type SerializedTrade = {
   id: string;
@@ -48,6 +49,7 @@ type Props = {
   opportunities: SerializedOpportunity[];
   trades: SerializedTrade[];
   playbooks: SerializedPlaybook[];
+  showOnboarding?: boolean;
   metrics: {
     totalTrades: number;
     winRate: number;
@@ -61,12 +63,13 @@ type Props = {
   equityCurve: { date: string; equity: number; pnl: number }[];
 };
 
-export function DashboardView({ opportunities, trades, playbooks, metrics, equityCurve }: Props) {
+export function DashboardView({ opportunities, trades, playbooks, metrics, equityCurve, showOnboarding }: Props) {
   const watching = opportunities.filter((o) => o.status === "WATCHING" || o.status === "PLANNED");
   const taken = opportunities.filter((o) => o.status === "TAKEN");
 
   return (
     <div className="space-y-2">
+      {showOnboarding && <OnboardingBanner />}
       <div className="grid grid-cols-4 gap-2 max-[960px]:grid-cols-2 max-[560px]:grid-cols-1">
         <Kpi label="Win Rate" value={metrics.totalTrades ? formatPercent(metrics.winRate) : "—"} />
         <Kpi label="Profit Factor" value={metrics.totalTrades ? metrics.profitFactor.toFixed(2) : "—"} />
@@ -88,7 +91,7 @@ export function DashboardView({ opportunities, trades, playbooks, metrics, equit
                         <stop offset="100%" stopColor="#0f9f95" stopOpacity={0.02} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid stroke="#edf1ef" vertical={false} />
+                    <CartesianGrid stroke="rgba(128,128,128,0.25)" vertical={false} />
                     <XAxis dataKey="date" tick={{ fontSize: 11 }} />
                     <YAxis tick={{ fontSize: 11 }} />
                     <Tooltip />
@@ -102,20 +105,20 @@ export function DashboardView({ opportunities, trades, playbooks, metrics, equit
           <Surface>
             <div className="flex items-center justify-between">
               <SectionTitle>Active Opportunities</SectionTitle>
-              <Link href="/opportunities" className="text-[12px] font-medium text-[#08746f] hover:underline">
+              <Link href="/opportunities" className="text-[12px] font-medium text-[var(--teal-dark)] hover:underline">
                 View all <ChevronRight className="ml-1 inline h-3 w-3" />
               </Link>
             </div>
             {watching.length === 0 ? (
-              <p className="mt-3 text-[13px] text-[#66746f]">
+              <p className="mt-3 text-[13px] text-[var(--muted)]">
                 No active opportunities.{" "}
-                <Link href="/opportunities" className="text-[#08746f] hover:underline">Create one</Link> or{" "}
-                <Link href="/import" className="text-[#08746f] hover:underline">import from MetaTrader</Link>.
+                <Link href="/opportunities" className="text-[var(--teal-dark)] hover:underline">Create one</Link> or{" "}
+                <Link href="/import" className="text-[var(--teal-dark)] hover:underline">import from MetaTrader</Link>.
               </p>
             ) : (
               <div className="mt-3 overflow-x-auto">
                 <table className="w-full min-w-[500px] text-left text-[12px]">
-                  <thead className="border-y border-[#e4ebe8] text-[#5f6d68]">
+                  <thead className="border-y border-[var(--line)] text-[var(--muted)]">
                     <tr>
                       {["Ticker", "Setup", "Status", "Confirmations", "Grade"].map((h) => (
                         <th key={h} className="h-9 px-2 font-semibold">{h}</th>
@@ -124,7 +127,7 @@ export function DashboardView({ opportunities, trades, playbooks, metrics, equit
                   </thead>
                   <tbody>
                     {watching.slice(0, 8).map((opp) => (
-                      <tr key={opp.id} className="border-b border-[#edf1ef]">
+                      <tr key={opp.id} className="border-b border-[var(--line)]">
                         <td className="h-10 px-2 font-semibold">{opp.ticker}</td>
                         <td className="px-2">{opp.setupName}</td>
                         <td className="px-2"><StatusPill status={opp.status} /></td>
@@ -141,20 +144,20 @@ export function DashboardView({ opportunities, trades, playbooks, metrics, equit
           <Surface>
             <div className="flex items-center justify-between">
               <SectionTitle>Recent Trades</SectionTitle>
-              <Link href="/journal" className="text-[12px] font-medium text-[#08746f] hover:underline">
+              <Link href="/journal" className="text-[12px] font-medium text-[var(--teal-dark)] hover:underline">
                 View all <ChevronRight className="ml-1 inline h-3 w-3" />
               </Link>
             </div>
             {trades.length === 0 ? (
-              <p className="mt-3 text-[13px] text-[#66746f]">
+              <p className="mt-3 text-[13px] text-[var(--muted)]">
                 No trades yet.{" "}
-                <Link href="/journal" className="text-[#08746f] hover:underline">Add a trade</Link> or{" "}
-                <Link href="/import" className="text-[#08746f] hover:underline">import from MetaTrader</Link>.
+                <Link href="/journal" className="text-[var(--teal-dark)] hover:underline">Add a trade</Link> or{" "}
+                <Link href="/import" className="text-[var(--teal-dark)] hover:underline">import from MetaTrader</Link>.
               </p>
             ) : (
               <div className="mt-3 overflow-x-auto">
                 <table className="w-full min-w-[500px] text-left text-[12px]">
-                  <thead className="border-y border-[#e4ebe8] text-[#5f6d68]">
+                  <thead className="border-y border-[var(--line)] text-[var(--muted)]">
                     <tr>
                       {["Date", "Ticker", "Direction", "R", "P&L", "Rule Break"].map((h) => (
                         <th key={h} className="h-9 px-2 font-semibold">{h}</th>
@@ -163,11 +166,11 @@ export function DashboardView({ opportunities, trades, playbooks, metrics, equit
                   </thead>
                   <tbody>
                     {trades.slice(0, 8).map((t) => (
-                      <tr key={t.id} className="border-b border-[#edf1ef]">
+                      <tr key={t.id} className="border-b border-[var(--line)]">
                         <td className="h-10 px-2">{new Date(t.openedAt).toLocaleDateString()}</td>
                         <td className="px-2 font-semibold">{t.ticker}</td>
                         <td className="px-2"><StatusPill status={t.direction} label={t.direction} /></td>
-                        <td className={cn("px-2 font-semibold", Number(t.rMultiple) >= 0 ? "text-[#08746f]" : "text-[#d94848]")}>
+                        <td className={cn("px-2 font-semibold", Number(t.rMultiple) >= 0 ? "text-[var(--teal-dark)]" : "text-[var(--red)]")}>
                           {Number(t.rMultiple).toFixed(1)}R
                         </td>
                         <td className="px-2">{formatCurrency(Number(t.pnl))}</td>
@@ -194,10 +197,10 @@ export function DashboardView({ opportunities, trades, playbooks, metrics, equit
                 <Link
                   key={item.label}
                   href={item.href}
-                  className="block rounded-md border border-[#dbe2df] p-3 hover:border-[#89ccc6] hover:bg-[#effaf8]"
+                  className="block rounded-md border border-[var(--line)] p-3 hover:border-[var(--teal)]/50 hover:bg-[var(--panel-soft)]"
                 >
-                  <div className="text-[13px] font-semibold text-[#263331]">{item.label}</div>
-                  <div className="mt-1 text-[12px] text-[#66746f]">{item.desc}</div>
+                  <div className="text-[13px] font-semibold text-[var(--ink)]">{item.label}</div>
+                  <div className="mt-1 text-[12px] text-[var(--muted)]">{item.desc}</div>
                 </Link>
               ))}
             </div>
@@ -206,9 +209,9 @@ export function DashboardView({ opportunities, trades, playbooks, metrics, equit
           <Surface>
             <SectionTitle>Active Playbooks</SectionTitle>
             {playbooks.length === 0 ? (
-              <p className="mt-3 text-[13px] text-[#66746f]">
+              <p className="mt-3 text-[13px] text-[var(--muted)]">
                 No playbooks yet.{" "}
-                <Link href="/playbook" className="text-[#08746f] hover:underline">Create one</Link>.
+                <Link href="/playbook" className="text-[var(--teal-dark)] hover:underline">Create one</Link>.
               </p>
             ) : (
               <div className="mt-3 space-y-2">
@@ -216,10 +219,10 @@ export function DashboardView({ opportunities, trades, playbooks, metrics, equit
                   <Link
                     key={pb.id}
                     href="/playbook"
-                    className="block rounded-md border border-[#dbe2df] p-3 hover:border-[#89ccc6] hover:bg-[#effaf8]"
+                    className="block rounded-md border border-[var(--line)] p-3 hover:border-[var(--teal)]/50 hover:bg-[var(--panel-soft)]"
                   >
                     <div className="text-[13px] font-semibold">{pb.name}</div>
-                    <div className="mt-1 line-clamp-2 text-[12px] text-[#66746f]">{pb.context}</div>
+                    <div className="mt-1 line-clamp-2 text-[12px] text-[var(--muted)]">{pb.context}</div>
                   </Link>
                 ))}
               </div>
@@ -229,11 +232,11 @@ export function DashboardView({ opportunities, trades, playbooks, metrics, equit
           <Surface>
             <SectionTitle>Stats Summary</SectionTitle>
             <div className="mt-3 space-y-2 text-[13px]">
-              <div className="flex justify-between"><span className="text-[#66746f]">Total Trades</span><span className="font-semibold">{metrics.totalTrades}</span></div>
-              <div className="flex justify-between"><span className="text-[#66746f]">Avg R</span><span className="font-semibold">{metrics.avgR.toFixed(2)}R</span></div>
-              <div className="flex justify-between"><span className="text-[#66746f]">Max Drawdown</span><span className="font-semibold text-[#d94848]">{formatCurrency(metrics.maxDrawdown)}</span></div>
-              <div className="flex justify-between"><span className="text-[#66746f]">Rule Breaks</span><span className="font-semibold">{metrics.ruleBreaks}</span></div>
-              <div className="flex justify-between"><span className="text-[#66746f]">Opportunities</span><span className="font-semibold">{watching.length} watching / {taken.length} taken</span></div>
+              <div className="flex justify-between"><span className="text-[var(--muted)]">Total Trades</span><span className="font-semibold">{metrics.totalTrades}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--muted)]">Avg R</span><span className="font-semibold">{metrics.avgR.toFixed(2)}R</span></div>
+              <div className="flex justify-between"><span className="text-[var(--muted)]">Max Drawdown</span><span className="font-semibold text-[var(--red)]">{formatCurrency(metrics.maxDrawdown)}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--muted)]">Rule Breaks</span><span className="font-semibold">{metrics.ruleBreaks}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--muted)]">Opportunities</span><span className="font-semibold">{watching.length} watching / {taken.length} taken</span></div>
             </div>
           </Surface>
         </div>

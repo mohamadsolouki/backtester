@@ -15,6 +15,8 @@ import {
   EmptyState,
 } from "@/components/ui";
 import { Combobox } from "@/components/ui/combobox";
+import { HelpTip } from "@/components/ui/help-tip";
+import { helpTips } from "@/lib/help-content";
 import { cn, formatCurrency } from "@/lib/utils";
 import { createTrade, updateTrade, deleteTrade } from "@/app/actions/trades";
 import { createReview, updateReview } from "@/app/actions/reviews";
@@ -270,7 +272,7 @@ function TradeForm({
         <NumberField label="Entry Price" value={entryPrice} onChange={setEntryPrice} step="0.01" />
         <NumberField label="Exit Price" value={exitPrice} onChange={setExitPrice} step="0.01" />
         <NumberField label="Size / Qty" value={quantity} onChange={setQuantity} step="0.01" />
-        <NumberField label="R Multiple" value={rMultiple} onChange={setRMultiple} step="0.1" />
+        <NumberField label={<span className="inline-flex items-center gap-1">R Multiple <HelpTip content={helpTips.rMultiple} /></span>} value={rMultiple} onChange={setRMultiple} step="0.1" />
         <NumberField label="P&L ($)" value={pnl} onChange={setPnl} step="0.01" />
         <NumberField label="Fees ($)" value={fees} onChange={setFees} step="0.01" />
         <label>
@@ -293,7 +295,7 @@ function TradeForm({
         </label>
         <div className="col-span-2 max-[560px]:col-span-1">
           <Combobox
-            label="Rule Break (if any)"
+            label={<span className="inline-flex items-center gap-1">Rule Break (if any) <HelpTip content="Tag any discipline violations: moved stop, oversized position, FOMO entry, etc. Used in Analytics to measure the cost of rule breaks." /></span>}
             value={ruleBreak}
             onChange={setRuleBreak}
             options={ruleBreakOptions}

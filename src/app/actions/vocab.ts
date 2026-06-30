@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -53,6 +54,12 @@ export async function createContextTagDefinition(name: string) {
   });
 }
 
+export async function deactivateContextTagDefinition(id: string) {
+  const userId = await requireUser();
+  await prisma.contextTagDefinition.updateMany({ where: { id, userId }, data: { active: false } });
+  revalidatePath("/settings");
+}
+
 export async function getRuleBreakDefinitions() {
   const userId = await requireUser();
   const existing = await prisma.ruleBreakDefinition.count({ where: { userId } });
@@ -77,6 +84,12 @@ export async function createRuleBreakDefinition(name: string) {
     update: { active: true },
     create: { userId, name: normalized },
   });
+}
+
+export async function deactivateRuleBreakDefinition(id: string) {
+  const userId = await requireUser();
+  await prisma.ruleBreakDefinition.updateMany({ where: { id, userId }, data: { active: false } });
+  revalidatePath("/settings");
 }
 
 export async function getDistinctTickers() {

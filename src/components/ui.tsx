@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import React, { type ReactNode } from "react";
 import { Check, SlidersHorizontal, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { gradeTone } from "@/lib/context-engine";
@@ -220,7 +220,7 @@ export function NumberField({
   onChange,
   step,
 }: {
-  label: string;
+  label: React.ReactNode;
   value: number;
   onChange: (value: number) => void;
   step?: string;

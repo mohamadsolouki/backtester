@@ -117,15 +117,15 @@ export function AnalyticsView({ trades }: { trades: SerializedTrade[] }) {
               <AreaChart data={stats.equityCurve}>
                 <defs>
                   <linearGradient id="aeq" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stopColor="#0f9f95" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="#0f9f95" stopOpacity={0.02} />
+                    <stop offset="0%" stopColor="var(--teal)" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="var(--teal)" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid stroke="#edf1ef" vertical={false} />
+                <CartesianGrid stroke="rgba(128,128,128,0.25)" vertical={false} />
                 <XAxis dataKey="date" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip />
-                <Area dataKey="equity" fill="url(#aeq)" stroke="#0f9f95" strokeWidth={2} />
+                <Area dataKey="equity" fill="url(#aeq)" stroke="var(--teal)" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -136,13 +136,13 @@ export function AnalyticsView({ trades }: { trades: SerializedTrade[] }) {
           <div className="mt-3 h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats.hourData}>
-                <CartesianGrid stroke="#edf1ef" vertical={false} />
+                <CartesianGrid stroke="rgba(128,128,128,0.25)" vertical={false} />
                 <XAxis dataKey="hour" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip />
                 <Bar dataKey="r" radius={[4, 4, 0, 0]}>
                   {stats.hourData.map((row) => (
-                    <Cell key={row.hour} fill={row.r >= 0 ? "#0f9f95" : "#d94848"} />
+                    <Cell key={row.hour} fill={row.r >= 0 ? "var(--teal)" : "var(--red)"} />
                   ))}
                 </Bar>
               </BarChart>
@@ -156,7 +156,7 @@ export function AnalyticsView({ trades }: { trades: SerializedTrade[] }) {
           <SectionTitle>Session Analysis</SectionTitle>
           <div className="mt-3 overflow-x-auto">
             <table className="w-full text-left text-[12px]">
-              <thead className="border-y border-[#e4ebe8] text-[#5f6d68]">
+              <thead className="border-y border-[var(--line)] text-[var(--muted)]">
                 <tr>
                   {["Session", "Trades", "Win Rate", "Total R"].map((h) => (
                     <th key={h} className="h-9 px-2 font-semibold">{h}</th>
@@ -165,11 +165,11 @@ export function AnalyticsView({ trades }: { trades: SerializedTrade[] }) {
               </thead>
               <tbody>
                 {stats.sessionData.map((s) => (
-                  <tr key={s.name} className="border-b border-[#edf1ef]">
+                  <tr key={s.name} className="border-b border-[var(--line)]">
                     <td className="h-9 px-2 font-semibold">{s.name}</td>
                     <td className="px-2">{s.total}</td>
                     <td className="px-2">{formatPercent(s.winRate)}</td>
-                    <td className={cn("px-2 font-semibold", s.r >= 0 ? "text-[#08746f]" : "text-[#d94848]")}>{s.r.toFixed(2)}R</td>
+                    <td className={cn("px-2 font-semibold", s.r >= 0 ? "text-[var(--teal-dark)]" : "text-[var(--red)]")}>{s.r.toFixed(2)}R</td>
                   </tr>
                 ))}
               </tbody>
@@ -181,7 +181,7 @@ export function AnalyticsView({ trades }: { trades: SerializedTrade[] }) {
           <SectionTitle>Ticker Analysis</SectionTitle>
           <div className="mt-3 overflow-x-auto">
             <table className="w-full text-left text-[12px]">
-              <thead className="border-y border-[#e4ebe8] text-[#5f6d68]">
+              <thead className="border-y border-[var(--line)] text-[var(--muted)]">
                 <tr>
                   {["Ticker", "Trades", "Total R", "P&L"].map((h) => (
                     <th key={h} className="h-9 px-2 font-semibold">{h}</th>
@@ -190,10 +190,10 @@ export function AnalyticsView({ trades }: { trades: SerializedTrade[] }) {
               </thead>
               <tbody>
                 {stats.tickerData.map((t) => (
-                  <tr key={t.ticker} className="border-b border-[#edf1ef]">
+                  <tr key={t.ticker} className="border-b border-[var(--line)]">
                     <td className="h-9 px-2 font-semibold">{t.ticker}</td>
                     <td className="px-2">{t.count}</td>
-                    <td className={cn("px-2 font-semibold", t.r >= 0 ? "text-[#08746f]" : "text-[#d94848]")}>{t.r.toFixed(2)}R</td>
+                    <td className={cn("px-2 font-semibold", t.r >= 0 ? "text-[var(--teal-dark)]" : "text-[var(--red)]")}>{t.r.toFixed(2)}R</td>
                     <td className="px-2">{formatCurrency(t.pnl)}</td>
                   </tr>
                 ))}

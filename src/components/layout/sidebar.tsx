@@ -12,7 +12,6 @@ import {
   ClipboardCheck,
   Database,
   FileSpreadsheet,
-  Gauge,
   HelpCircle,
   Import,
   LayoutDashboard,
@@ -35,7 +34,6 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { label: "Overview", icon: LayoutDashboard, href: "/" },
       { label: "Watchlist", icon: Activity, href: "/opportunities" },
       { label: "Playbook", icon: BookOpen, href: "/playbook" },
-      { label: "Context Engine", icon: Gauge, href: "/context-engine" },
     ],
   },
   {

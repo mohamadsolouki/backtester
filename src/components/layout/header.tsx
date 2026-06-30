@@ -13,6 +13,7 @@ import {
   Sun,
 } from "lucide-react";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { updateUserSettings } from "@/app/actions/settings";
 import { cn } from "@/lib/utils";
 import { parseDateRangeSearchParams, type DateRangePreset, type ResolvedDateRange } from "@/lib/date-range";
 import { sessionNames, type SessionName } from "@/lib/domain";
@@ -24,7 +25,6 @@ const routeLabels: Record<string, string> = {
   "/backtest": "Edge Lab",
   "/sop": "Routine",
   "/playbook": "Playbook",
-  "/context-engine": "Context Engine",
   "/analytics": "Analytics",
   "/reports": "Reports",
   "/settings": "Settings",
@@ -130,7 +130,11 @@ export function Header({
       </div>
       <div className="flex-1" />
       <button
-        onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+        onClick={() => {
+          const next = resolvedTheme === "dark" ? "light" : "dark";
+          setTheme(next);
+          updateUserSettings({ theme: next });
+        }}
         className="rounded-full border border-white/14 p-2 text-white/74 hover:bg-white/8"
         aria-label="Toggle theme"
         title="Toggle theme"

@@ -111,6 +111,7 @@ model User {
   importBatches         ImportBatch[]
   contextTagDefinitions ContextTagDefinition[]
   ruleBreakDefinitions  RuleBreakDefinition[]
+  settings              UserSettings?
 }
 
 model Account {
@@ -373,6 +374,22 @@ model RuleBreakDefinition {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, name])
+}
+
+model UserSettings {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  riskPerTrade   Decimal  @default(0.75) @db.Decimal(5, 2)
+  maxDailyLoss   Decimal  @default(1500) @db.Decimal(12, 2)
+  maxOpenRisk    Decimal  @default(1.5) @db.Decimal(5, 2)
+  maxTrades      Int      @default(4)
+  minR           Decimal  @default(1.5) @db.Decimal(5, 2)
+  theme          String   @default("light")
+  onboardingSeen Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model ImportBatch {

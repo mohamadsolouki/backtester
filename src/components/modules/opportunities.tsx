@@ -6,6 +6,8 @@ import { Plus } from "lucide-react";
 import type { SessionName, OpportunityStatus, EntryType, EntryStatus } from "@prisma/client";
 import { Surface, SectionTitle, ModuleShell, ActionButton, StatusPill, GradeBadge, Segmented, EmptyState } from "@/components/ui";
 import { Combobox } from "@/components/ui/combobox";
+import { HelpTip } from "@/components/ui/help-tip";
+import { helpTips } from "@/lib/help-content";
 import { cn } from "@/lib/utils";
 import { createOpportunity, updateOpportunityStatus, toggleContextTag, updateEntry, deleteOpportunity } from "@/app/actions/opportunities";
 
@@ -98,9 +100,15 @@ export function OpportunitiesView({
               <table className="w-full min-w-[600px] text-left text-[12px]">
                 <thead className="border-y border-[var(--line)] text-[var(--muted)]">
                   <tr>
-                    {["Ticker", "Setup", "Bias", "Session", "Status", "Conf", "Grade"].map((h) => (
+                    {(["Ticker", "Setup", "Bias", "Session", "Status"] as const).map((h) => (
                       <th key={h} className="h-9 px-2 font-semibold">{h}</th>
                     ))}
+                    <th className="h-9 px-2 font-semibold">
+                      <span className="inline-flex items-center gap-1">Conf <HelpTip content={helpTips.confirmationCount} /></span>
+                    </th>
+                    <th className="h-9 px-2 font-semibold">
+                      <span className="inline-flex items-center gap-1">Grade <HelpTip content={helpTips.grade} /></span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -171,7 +179,14 @@ function NewOpportunityForm({
       </div>
       <div className="mt-3 grid grid-cols-3 gap-3 max-[768px]:grid-cols-1">
         <Combobox label="Ticker" value={ticker} onChange={setTicker} options={tickerOptions} required placeholder="NQ" />
-        <Combobox label="Setup" value={setup} onChange={setSetup} options={setupOptions} required placeholder="Momentum Break" />
+        <Combobox
+          label={<span className="inline-flex items-center gap-1">Setup <HelpTip content={helpTips.setupName} /></span>}
+          value={setup}
+          onChange={setSetup}
+          options={setupOptions}
+          required
+          placeholder="Momentum Break"
+        />
         <label>
           <span className="text-[12px] text-[var(--muted)]">Session</span>
           <select value={session} onChange={(e) => setSession(e.target.value as SessionName)} className="mt-1 h-9 w-full rounded-md border border-[var(--line)] bg-[var(--panel)] px-3">
@@ -194,7 +209,7 @@ function NewOpportunityForm({
         </label>
         <div className="col-span-2 max-[768px]:col-span-1">
           <Combobox
-            label="Primary Context"
+            label={<span className="inline-flex items-center gap-1">Primary Context <HelpTip content={helpTips.primaryContext} /></span>}
             value={context}
             onChange={setContext}
             options={primaryContextOptions}
@@ -212,7 +227,10 @@ function NewOpportunityForm({
   );
 }
 
+type DetailTab = "overview" | "context" | "entries";
+
 function OpportunityDetail({ opp }: { opp: SerializedOpp }) {
+  const [tab, setTab] = useState<DetailTab>("overview");
   const [pending, startTransition] = useTransition();
 
   function setStatus(status: OpportunityStatus) {
@@ -242,6 +260,12 @@ function OpportunityDetail({ opp }: { opp: SerializedOpp }) {
     });
   }
 
+  const tabs: { id: DetailTab; label: string }[] = [
+    { id: "overview", label: "Overview" },
+    { id: "context", label: `Context (${opp.confirmationCount})` },
+    { id: "entries", label: "Entries" },
+  ];
+
   return (
     <div className="space-y-2">
       <Surface>
@@ -252,66 +276,103 @@ function OpportunityDetail({ opp }: { opp: SerializedOpp }) {
           </div>
           <GradeBadge grade={opp.grade ?? "F"} />
         </div>
-        <div className="mt-3 space-y-2 text-[13px]">
-          <div className="flex justify-between"><span className="text-[var(--muted)]">Bias</span><span className="font-medium">{opp.bias}</span></div>
-          <div className="flex justify-between"><span className="text-[var(--muted)]">Session</span><span>{opp.sessionName.replace(/_/g, " ")}</span></div>
-          <div className="flex justify-between"><span className="text-[var(--muted)]">Confirmations</span><span className="font-semibold">{opp.confirmationCount} / 7</span></div>
-          <div className="flex justify-between"><span className="text-[var(--muted)]">Status</span><StatusPill status={opp.status} /></div>
-          {opp.notes && <p className="mt-2 rounded-md bg-[var(--panel-soft)] p-3 text-[var(--ink)]">{opp.notes}</p>}
-        </div>
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          <button onClick={() => setStatus("TAKEN")} disabled={pending} className="h-9 rounded-md bg-[var(--teal)] text-[12px] font-semibold text-white">Taken</button>
-          <button onClick={() => setStatus("SKIPPED")} disabled={pending} className="h-9 rounded-md bg-[var(--amber)] text-[12px] font-semibold text-white">Skipped</button>
-          <button onClick={() => setStatus("NOT_FORMED")} disabled={pending} className="h-9 rounded-md bg-[var(--muted)] text-[12px] font-semibold text-white">Not Formed</button>
-        </div>
-        <button onClick={handleDelete} disabled={pending} className="mt-2 w-full text-center text-[12px] text-[var(--red)] hover:underline">Delete opportunity</button>
-      </Surface>
 
-      <Surface>
-        <SectionTitle>Context Tags</SectionTitle>
-        <div className="mt-3 space-y-2">
-          {opp.contextTags.map((tag) => (
+        <div className="mt-3 flex gap-0.5 border-b border-[var(--line)]">
+          {tabs.map((t) => (
             <button
-              key={tag.id}
-              onClick={() => handleToggleTag(tag.id)}
-              disabled={pending}
+              key={t.id}
+              onClick={() => setTab(t.id)}
               className={cn(
-                "flex w-full items-center justify-between rounded-md border p-3 text-left text-[13px] transition",
-                tag.enabled ? "border-[var(--teal)]/50 bg-[var(--panel-soft)]" : "border-[var(--line)] hover:bg-[var(--panel-soft)]"
+                "px-3 py-2 text-[12px] font-medium transition-colors",
+                tab === t.id
+                  ? "border-b-2 border-[var(--teal)] text-[var(--teal-dark)]"
+                  : "text-[var(--muted)] hover:text-[var(--ink)]"
               )}
             >
-              <span className="font-medium">{tag.name.replace(/_/g, " ")}</span>
-              <span className={cn(
-                "flex h-5 w-5 items-center justify-center rounded border text-[11px]",
-                tag.enabled ? "border-[var(--teal)] bg-[var(--teal)] text-white" : "border-[var(--line)]"
-              )}>
-                {tag.enabled && "✓"}
-              </span>
+              {t.label}
             </button>
           ))}
         </div>
-      </Surface>
 
-      <Surface>
-        <SectionTitle>Entry Plan</SectionTitle>
-        <div className="mt-3 space-y-2">
-          {opp.entries.map((entry) => (
-            <div key={entry.id} className="flex items-center justify-between gap-2">
-              <span className="w-10 text-[12px] font-semibold">{entry.type}</span>
-              <select
-                value={entry.status}
-                onChange={(e) => handleEntryUpdate(entry.type as EntryType, e.target.value as EntryStatus)}
-                disabled={pending}
-                className="h-8 flex-1 rounded-md border border-[var(--line)] bg-[var(--panel)] px-2 text-[12px]"
-              >
-                {["WAITING", "TAKEN", "SKIPPED", "NOT_FORMED"].map((s) => (
-                  <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
-                ))}
-              </select>
-              <StatusPill status={entry.status} />
+        {tab === "overview" && (
+          <div className="mt-3">
+            <div className="space-y-2 text-[13px]">
+              <div className="flex justify-between"><span className="text-[var(--muted)]">Bias</span><span className="font-medium">{opp.bias}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--muted)]">Session</span><span>{opp.sessionName.replace(/_/g, " ")}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--muted)]">Confirmations</span><span className="font-semibold">{opp.confirmationCount} / {opp.contextTags.length}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--muted)]">Status</span><StatusPill status={opp.status} /></div>
             </div>
-          ))}
-        </div>
+            {opp.notes && <p className="mt-3 rounded-md bg-[var(--panel-soft)] p-3 text-[12px] text-[var(--ink)]">{opp.notes}</p>}
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              <button onClick={() => setStatus("TAKEN")} disabled={pending} className="h-9 rounded-md bg-[var(--teal)] text-[12px] font-semibold text-white disabled:opacity-50">Taken</button>
+              <button onClick={() => setStatus("SKIPPED")} disabled={pending} className="h-9 rounded-md bg-[var(--amber)] text-[12px] font-semibold text-white disabled:opacity-50">Skipped</button>
+              <button onClick={() => setStatus("NOT_FORMED")} disabled={pending} className="h-9 rounded-md bg-[var(--muted)] text-[12px] font-semibold text-white disabled:opacity-50">Not Formed</button>
+            </div>
+            <button onClick={handleDelete} disabled={pending} className="mt-2 w-full text-center text-[12px] text-[var(--red)] hover:underline">Delete opportunity</button>
+          </div>
+        )}
+
+        {tab === "context" && (
+          <div className="mt-3">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-[12px] text-[var(--muted)]">Toggle signals that are currently active in the market.</p>
+              <span className="text-[12px] font-semibold text-[var(--teal-dark)]">{opp.confirmationCount}/{opp.contextTags.length} active</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {opp.contextTags.map((tag) => (
+                <button
+                  key={tag.id}
+                  onClick={() => handleToggleTag(tag.id)}
+                  disabled={pending}
+                  className={cn(
+                    "rounded-md border p-3 text-left text-[12px] transition",
+                    tag.enabled
+                      ? "border-[var(--teal)]/50 bg-[var(--panel-soft)]"
+                      : "border-[var(--line)] hover:bg-[var(--panel-soft)]"
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium leading-tight">{tag.name.replace(/_/g, " ")}</span>
+                    <span className={cn(
+                      "flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border",
+                      tag.enabled ? "border-[var(--teal)] bg-[var(--teal)] text-white" : "border-[var(--line)]"
+                    )}>
+                      {tag.enabled && <span className="text-[10px]">✓</span>}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[var(--muted)]">
+                    Weight {tag.weight > 0 ? `+${tag.weight}` : tag.weight}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {tab === "entries" && (
+          <div className="mt-3 space-y-2">
+            {opp.entries.length === 0 ? (
+              <p className="text-[13px] text-[var(--muted)]">No entry plan defined.</p>
+            ) : (
+              opp.entries.map((entry) => (
+                <div key={entry.id} className="flex items-center justify-between gap-2">
+                  <span className="w-10 text-[12px] font-semibold">{entry.type}</span>
+                  <select
+                    value={entry.status}
+                    onChange={(e) => handleEntryUpdate(entry.type as EntryType, e.target.value as EntryStatus)}
+                    disabled={pending}
+                    className="h-8 flex-1 rounded-md border border-[var(--line)] bg-[var(--panel)] px-2 text-[12px] text-[var(--ink)]"
+                  >
+                    {["WAITING", "TAKEN", "SKIPPED", "NOT_FORMED"].map((s) => (
+                      <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
+                    ))}
+                  </select>
+                  <StatusPill status={entry.status} />
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </Surface>
     </div>
   );

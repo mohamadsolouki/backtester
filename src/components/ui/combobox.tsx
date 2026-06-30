@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { Check, ChevronDown, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePopover } from "@/lib/use-popover";
@@ -15,7 +15,7 @@ export function Combobox({
   required,
   creatable = true,
 }: {
-  label: string;
+  label: React.ReactNode;
   value: string;
   onChange: (value: string) => void;
   options: string[];

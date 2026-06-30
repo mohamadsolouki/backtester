@@ -137,7 +137,6 @@ export async function toggleContextTag(opportunityId: string, tagId: string) {
   });
 
   revalidatePath("/opportunities");
-  revalidatePath("/context-engine");
   revalidatePath("/");
   return { confirmations };
 }
@@ -165,7 +164,6 @@ export async function updateEntry(
   }
 
   revalidatePath("/opportunities");
-  revalidatePath("/context-engine");
   revalidatePath("/");
 }
 

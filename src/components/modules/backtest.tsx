@@ -39,12 +39,12 @@ export function BacktestView({ trades }: { trades: SerializedTrade[] }) {
 
   return (
     <ModuleShell
-      title="Backtest DB"
+      title="Edge Lab"
       description="Context performance computed from trades linked to graded opportunities."
       actions={
         <Link
           href="/import"
-          className="flex h-9 items-center gap-2 rounded-md border border-[#b7d5d2] bg-white px-3 text-[12px] font-semibold text-[#08746f] hover:bg-[#effaf8]"
+          className="flex h-9 items-center gap-2 rounded-md border border-[var(--teal)]/40 bg-[var(--panel)] px-3 text-[12px] font-semibold text-[var(--teal-dark)] hover:bg-[var(--panel-soft)]"
         >
           <Upload className="h-3.5 w-3.5" />
           Import Trades
@@ -54,23 +54,23 @@ export function BacktestView({ trades }: { trades: SerializedTrade[] }) {
       {contextMatrix.length === 0 ? (
         <EmptyState
           title="No context-tagged trades yet"
-          description="Link trades to opportunities with context tags (via the Context Engine) to see which setups actually perform best."
+          description="Link trades to opportunities with context tags to see which setups actually perform best."
         />
       ) : (
         <Surface>
           <SectionTitle>Context Performance Matrix</SectionTitle>
           <div className="mt-3 grid grid-cols-2 gap-2 max-[768px]:grid-cols-1">
             {contextMatrix.map((row) => (
-              <div key={row.tag} className="rounded-md border border-[#dbe2df] p-3 text-[12px]">
+              <div key={row.tag} className="rounded-md border border-[var(--line)] p-3 text-[12px]">
                 <div className="flex items-center justify-between font-semibold">
                   <span>{row.tag}</span>
-                  <span className={cn(row.expectancy >= 0 ? "text-[#08746f]" : "text-[#d94848]")}>
+                  <span className={cn(row.expectancy >= 0 ? "text-[var(--teal-dark)]" : "text-[var(--red)]")}>
                     {row.expectancy >= 0 ? "+" : ""}{row.expectancy.toFixed(2)}R
                   </span>
                 </div>
-                <div className="mt-2 grid grid-cols-2 gap-2 text-[#66746f]">
+                <div className="mt-2 grid grid-cols-2 gap-2 text-[var(--muted)]">
                   <span>Win Rate {formatPercent(row.winRate)}</span>
-                  <span>Samples {row.samples}</span>
+                  <span>{row.samples < 20 ? "⚠ " : ""}Samples {row.samples}</span>
                 </div>
               </div>
             ))}

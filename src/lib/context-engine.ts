@@ -20,7 +20,7 @@ export function computeGrade(confirmations: number, entries: EntryPlan[]): Grade
 }
 
 export function gradeTone(grade: Grade) {
-  if (grade.startsWith("A")) return "text-teal-700 bg-teal-50 border-teal-200";
-  if (grade.startsWith("B")) return "text-amber-700 bg-amber-50 border-amber-200";
-  return "text-red-700 bg-red-50 border-red-200";
+  if (grade.startsWith("A")) return "text-[var(--teal-dark)] bg-[var(--teal)]/10 border-[var(--teal)]/30";
+  if (grade.startsWith("B")) return "text-[var(--amber)] bg-[var(--amber)]/10 border-[var(--amber)]/30";
+  return "text-[var(--red)] bg-[var(--red)]/10 border-[var(--red)]/30";
 }
