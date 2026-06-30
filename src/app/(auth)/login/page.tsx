@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+const DEMO_EMAIL = "demo@playbookos.app";
+const DEMO_PASSWORD = "DemoTrader2026!";
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -12,14 +15,13 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function doSignIn(signInEmail: string, signInPassword: string) {
     setError("");
     setLoading(true);
 
     const result = await signIn("credentials", {
-      email,
-      password,
+      email: signInEmail,
+      password: signInPassword,
       redirect: false,
     });
 
@@ -33,10 +35,36 @@ export default function LoginPage() {
     }
   }
 
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    await doSignIn(email, password);
+  }
+
   return (
     <form onSubmit={handleSubmit} className="rounded-lg border border-white/10 bg-white/5 p-6 backdrop-blur">
       <h2 className="text-[18px] font-semibold text-white">Sign in</h2>
       <p className="mt-1 text-[13px] text-white/50">Enter your credentials to access the platform.</p>
+
+      <button
+        type="button"
+        onClick={() => doSignIn(DEMO_EMAIL, DEMO_PASSWORD)}
+        disabled={loading}
+        className="mt-4 flex w-full items-center justify-between rounded-md border border-[#18c8bd]/40 bg-[#18c8bd]/10 px-3 py-2.5 text-left transition hover:bg-[#18c8bd]/15 disabled:opacity-50"
+      >
+        <span>
+          <span className="block text-[13px] font-semibold text-[#5eead4]">Try the demo account</span>
+          <span className="mt-0.5 block text-[11px] text-white/50">{DEMO_EMAIL} · pre-loaded with sample trades</span>
+        </span>
+        <span className="rounded border border-[#18c8bd]/40 px-2 py-1 text-[11px] font-medium text-[#5eead4]">
+          One-click sign in
+        </span>
+      </button>
+
+      <div className="mt-4 flex items-center gap-3 text-[11px] text-white/30">
+        <div className="h-px flex-1 bg-white/10" />
+        or sign in manually
+        <div className="h-px flex-1 bg-white/10" />
+      </div>
 
       {error && (
         <div className="mt-4 rounded-md border border-red-400/30 bg-red-500/10 px-3 py-2 text-[13px] text-red-300">
