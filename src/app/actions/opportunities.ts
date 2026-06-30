@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import type { SkipReason } from "@prisma/client";
 import { z } from "zod";
 
 async function requireUser() {
@@ -24,7 +25,7 @@ const createSchema = z.object({
   notes: z.string().optional(),
 });
 
-export async function createOpportunity(input: z.infer<typeof createSchema>) {
+export async function createOpportunity(input: z.input<typeof createSchema>) {
   const userId = await requireUser();
   const data = createSchema.parse(input);
 
@@ -129,7 +130,7 @@ export async function updateEntry(
   opportunityId: string,
   entryType: "E1" | "E2" | "E3",
   status: "TAKEN" | "SKIPPED" | "NOT_FORMED" | "WAITING",
-  skipReason?: string
+  skipReason?: SkipReason
 ) {
   const userId = await requireUser();
   const opp = await prisma.opportunity.findFirst({ where: { id: opportunityId, userId } });
@@ -139,7 +140,7 @@ export async function updateEntry(
     where: { opportunityId_type: { opportunityId, type: entryType } },
     data: {
       status,
-      skipReason: status === "SKIPPED" && skipReason ? skipReason as any : null,
+      skipReason: status === "SKIPPED" && skipReason ? skipReason : null,
     },
   });
 

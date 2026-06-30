@@ -32,7 +32,7 @@ export async function getPlaybooks() {
   });
 }
 
-export async function createPlaybook(input: z.infer<typeof playbookSchema>) {
+export async function createPlaybook(input: z.input<typeof playbookSchema>) {
   const userId = await requireUser();
   const data = playbookSchema.parse(input);
 

@@ -36,7 +36,7 @@ export function PlaybookView({ playbooks }: { playbooks: SerializedPlaybook[] })
         <Surface>
           <SectionTitle>Setup Library</SectionTitle>
           {playbooks.length === 0 ? (
-            <p className="mt-3 text-[13px] text-[#66746f]">No playbooks yet. Create your first setup.</p>
+            <EmptyState title="No playbooks yet" description="Create your first setup to start tracking entry/exit rules." />
           ) : (
             <div className="mt-3 space-y-2">
               {playbooks.map((p) => (
@@ -73,11 +73,31 @@ function PlaybookDetail({ playbook }: { playbook: SerializedPlaybook }) {
     });
   }
 
+  function toggleActive() {
+    startTransition(async () => {
+      await updatePlaybook(playbook.id, { active: !playbook.active });
+      toast.success(playbook.active ? "Setup deactivated" : "Setup activated");
+    });
+  }
+
   return (
     <Surface>
       <div className="flex items-center justify-between">
-        <SectionTitle>{playbook.name}</SectionTitle>
-        <button onClick={handleDelete} disabled={pending} className="text-[12px] text-[#d94848] hover:underline">Delete</button>
+        <div className="flex items-center gap-2">
+          <SectionTitle>{playbook.name}</SectionTitle>
+          <span className={cn(
+            "rounded border px-2 py-0.5 text-[11px] font-medium",
+            playbook.active ? "border-[#89ccc6] bg-[#effaf8] text-[#08746f]" : "border-[#cfd8d4] bg-[#f4f6f5] text-[#66746f]"
+          )}>
+            {playbook.active ? "Active" : "Inactive"}
+          </span>
+        </div>
+        <div className="flex gap-3">
+          <button onClick={toggleActive} disabled={pending} className="text-[12px] text-[#08746f] hover:underline">
+            {playbook.active ? "Deactivate" : "Activate"}
+          </button>
+          <button onClick={handleDelete} disabled={pending} className="text-[12px] text-[#d94848] hover:underline">Delete</button>
+        </div>
       </div>
       <p className="mt-2 text-[13px] text-[#66746f]">{playbook.context}</p>
 

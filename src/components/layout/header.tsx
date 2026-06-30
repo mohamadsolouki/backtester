@@ -6,14 +6,9 @@ import { format } from "date-fns";
 import {
   Bell,
   CalendarDays,
-  CircleHelp,
   LogOut,
-  Moon,
   PanelLeftClose,
-  Sun,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { formatCurrency } from "@/lib/utils";
 
 const sessionNames = ["Pre-Market", "Open", "Midday", "Close", "Post-Market"] as const;
 

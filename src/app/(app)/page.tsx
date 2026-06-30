@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { computeEquityCurve } from "@/lib/utils";
 import { DashboardView } from "@/components/modules/dashboard";
 
 export default async function DashboardPage() {
@@ -32,18 +33,9 @@ export default async function DashboardPage() {
   const grossProfit = wins.reduce((s, r) => s + r, 0);
   const grossLoss = Math.abs(losses.reduce((s, r) => s + r, 0));
 
-  let equity = 0;
-  let maxEquity = 0;
-  let maxDrawdown = 0;
-  const equityCurve = trades
-    .slice()
-    .reverse()
-    .map((t) => {
-      equity += Number(t.pnl);
-      maxEquity = Math.max(maxEquity, equity);
-      maxDrawdown = Math.min(maxDrawdown, equity - maxEquity);
-      return { date: t.openedAt.toISOString().slice(0, 10), equity, pnl: Number(t.pnl) };
-    });
+  const { rows: equityCurve, maxDrawdown } = computeEquityCurve(
+    trades.slice().reverse().map((t) => ({ openedAt: t.openedAt, pnl: Number(t.pnl) }))
+  );
 
   const metrics = {
     totalTrades: trades.length,

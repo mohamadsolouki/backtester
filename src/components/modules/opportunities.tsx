@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Plus, Upload, Download } from "lucide-react";
+import { Plus } from "lucide-react";
+import type { SessionName, OpportunityStatus, EntryType, EntryStatus } from "@prisma/client";
 import { Surface, SectionTitle, ModuleShell, ActionButton, StatusPill, GradeBadge, Segmented, TextField, EmptyState } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { createOpportunity, updateOpportunityStatus, toggleContextTag, updateEntry, deleteOpportunity } from "@/app/actions/opportunities";
@@ -119,13 +120,13 @@ function NewOpportunityForm({ onClose }: { onClose: () => void }) {
   const [setup, setSetup] = useState("");
   const [bias, setBias] = useState("");
   const [context, setContext] = useState("");
-  const [session, setSession] = useState("OPEN");
+  const [session, setSession] = useState<SessionName>("OPEN");
 
   function handleSubmit() {
     if (!ticker || !setup || !bias) { toast.error("Fill required fields"); return; }
     startTransition(async () => {
       await createOpportunity({
-        ticker, setupName: setup, bias, primaryContext: context, sessionName: session as any,
+        ticker, setupName: setup, bias, primaryContext: context, sessionName: session,
       });
       toast.success("Opportunity created");
       onClose();
@@ -143,7 +144,7 @@ function NewOpportunityForm({ onClose }: { onClose: () => void }) {
         <TextField label="Setup" value={setup} onChange={setSetup} required placeholder="Momentum Break" />
         <label>
           <span className="text-[12px] text-[#66746f]">Session</span>
-          <select value={session} onChange={(e) => setSession(e.target.value)} className="mt-1 h-9 w-full rounded-md border border-[#cfd8d4] bg-white px-3">
+          <select value={session} onChange={(e) => setSession(e.target.value as SessionName)} className="mt-1 h-9 w-full rounded-md border border-[#cfd8d4] bg-white px-3">
             {["PRE_MARKET", "OPEN", "MIDDAY", "CLOSE", "POST_MARKET"].map((s) => (
               <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
             ))}
@@ -167,9 +168,9 @@ function NewOpportunityForm({ onClose }: { onClose: () => void }) {
 function OpportunityDetail({ opp }: { opp: SerializedOpp }) {
   const [pending, startTransition] = useTransition();
 
-  function setStatus(status: string) {
+  function setStatus(status: OpportunityStatus) {
     startTransition(async () => {
-      await updateOpportunityStatus(opp.id, status as any);
+      await updateOpportunityStatus(opp.id, status);
       toast.success(`Marked as ${status}`);
     });
   }
@@ -180,9 +181,9 @@ function OpportunityDetail({ opp }: { opp: SerializedOpp }) {
     });
   }
 
-  function handleEntryUpdate(entryType: string, status: string) {
+  function handleEntryUpdate(entryType: EntryType, status: EntryStatus) {
     startTransition(async () => {
-      await updateEntry(opp.id, entryType as any, status as any);
+      await updateEntry(opp.id, entryType, status);
     });
   }
 
@@ -252,7 +253,7 @@ function OpportunityDetail({ opp }: { opp: SerializedOpp }) {
               <span className="w-10 text-[12px] font-semibold">{entry.type}</span>
               <select
                 value={entry.status}
-                onChange={(e) => handleEntryUpdate(entry.type, e.target.value)}
+                onChange={(e) => handleEntryUpdate(entry.type as EntryType, e.target.value as EntryStatus)}
                 disabled={pending}
                 className="h-8 flex-1 rounded-md border border-[#cfd8d4] bg-white px-2 text-[12px]"
               >

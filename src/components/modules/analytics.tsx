@@ -14,7 +14,7 @@ import {
   YAxis,
 } from "recharts";
 import { Surface, SectionTitle, ModuleShell, Kpi, EmptyState } from "@/components/ui";
-import { formatCurrency, formatPercent, cn } from "@/lib/utils";
+import { formatCurrency, formatPercent, cn, computeEquityCurve } from "@/lib/utils";
 
 type SerializedTrade = {
   id: string;
@@ -36,15 +36,11 @@ export function AnalyticsView({ trades }: { trades: SerializedTrade[] }) {
     const grossProfit = wins.reduce((s, r) => s + r, 0);
     const grossLoss = Math.abs(losses.reduce((s, r) => s + r, 0));
 
-    let equity = 0;
-    let maxEquity = 0;
-    let maxDrawdown = 0;
-    const equityCurve = trades.map((t) => {
-      equity += Number(t.pnl);
-      maxEquity = Math.max(maxEquity, equity);
-      maxDrawdown = Math.min(maxDrawdown, equity - maxEquity);
-      return { date: new Date(t.openedAt).toLocaleDateString(), equity, pnl: Number(t.pnl) };
-    });
+    const { rows: equityRows, maxDrawdown } = computeEquityCurve(trades);
+    const equityCurve = equityRows.map((row) => ({
+      ...row,
+      date: new Date(row.date).toLocaleDateString(),
+    }));
 
     const hourly: Record<number, { r: number; count: number }> = {};
     trades.forEach((t) => {

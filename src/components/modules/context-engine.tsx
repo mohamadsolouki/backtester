@@ -4,8 +4,7 @@ import { useState, useTransition } from "react";
 import { Check } from "lucide-react";
 import { Surface, SectionTitle, ModuleShell, GradeBadge, StatusPill, EmptyState } from "@/components/ui";
 import { cn } from "@/lib/utils";
-import { toggleContextTag, updateEntry } from "@/app/actions/opportunities";
-import { computeGrade, countConfirmations } from "@/lib/context-engine";
+import { toggleContextTag } from "@/app/actions/opportunities";
 
 type SerializedOpp = {
   id: string;

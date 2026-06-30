@@ -2,10 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Upload, FileSpreadsheet, Check, AlertTriangle } from "lucide-react";
-import { Surface, SectionTitle, ModuleShell, ActionButton, EmptyState, StatusPill } from "@/components/ui";
+import { Upload, Check, AlertTriangle } from "lucide-react";
+import { Surface, SectionTitle, ModuleShell } from "@/components/ui";
 import { cn, formatCurrency } from "@/lib/utils";
-import { parseMetaTraderFile, type ParsedTrade, type ParseResult } from "@/lib/metatrader";
+import { parseMetaTraderFile, type ParseResult } from "@/lib/metatrader";
 import { bulkCreateTrades } from "@/app/actions/trades";
 
 type SerializedBatch = {

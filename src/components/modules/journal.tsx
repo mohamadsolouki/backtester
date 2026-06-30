@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2, Download, Save } from "lucide-react";
+import { Plus } from "lucide-react";
+import type { SessionName, TradeStatus } from "@prisma/client";
 import {
   Surface,
   SectionTitle,
@@ -135,8 +136,8 @@ export function JournalView({ trades }: { trades: SerializedTrade[] }) {
 function TradeForm({ onClose, initial }: { onClose: () => void; initial?: SerializedTrade }) {
   const [pending, startTransition] = useTransition();
   const [ticker, setTicker] = useState(initial?.ticker ?? "");
-  const [direction, setDirection] = useState<"LONG" | "SHORT">(initial?.direction as any ?? "LONG");
-  const [session, setSession] = useState(initial?.sessionName ?? "OPEN");
+  const [direction, setDirection] = useState<"LONG" | "SHORT">((initial?.direction as "LONG" | "SHORT") ?? "LONG");
+  const [session, setSession] = useState<SessionName>((initial?.sessionName as SessionName) ?? "OPEN");
   const [entryPrice, setEntryPrice] = useState(initial ? Number(initial.entryPrice) : 0);
   const [exitPrice, setExitPrice] = useState(initial?.exitPrice ? Number(initial.exitPrice) : 0);
   const [quantity, setQuantity] = useState(initial?.quantity ? Number(initial.quantity) : 1);
@@ -145,7 +146,7 @@ function TradeForm({ onClose, initial }: { onClose: () => void; initial?: Serial
   const [fees, setFees] = useState(initial ? Number(initial.fees) : 0);
   const [openedAt, setOpenedAt] = useState(initial ? initial.openedAt.slice(0, 16) : new Date().toISOString().slice(0, 16));
   const [closedAt, setClosedAt] = useState(initial?.closedAt ? initial.closedAt.slice(0, 16) : new Date().toISOString().slice(0, 16));
-  const [status, setStatus] = useState(initial?.status ?? "CLOSED");
+  const [status, setStatus] = useState<TradeStatus>((initial?.status as TradeStatus) ?? "CLOSED");
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [ruleBreak, setRuleBreak] = useState("");
 
@@ -160,7 +161,7 @@ function TradeForm({ onClose, initial }: { onClose: () => void; initial?: Serial
         await updateTrade(initial.id, {
           ticker,
           direction,
-          sessionName: session as any,
+          sessionName: session,
           entryPrice,
           exitPrice: exitPrice || undefined,
           quantity,
@@ -169,7 +170,7 @@ function TradeForm({ onClose, initial }: { onClose: () => void; initial?: Serial
           fees,
           openedAt: new Date(openedAt),
           closedAt: closedAt ? new Date(closedAt) : undefined,
-          status: status as any,
+          status,
           notes,
         });
         toast.success("Trade updated");
@@ -177,7 +178,7 @@ function TradeForm({ onClose, initial }: { onClose: () => void; initial?: Serial
         await createTrade({
           ticker,
           direction,
-          sessionName: session as any,
+          sessionName: session,
           entryPrice,
           exitPrice: exitPrice || undefined,
           quantity,
@@ -186,7 +187,7 @@ function TradeForm({ onClose, initial }: { onClose: () => void; initial?: Serial
           fees,
           openedAt: new Date(openedAt),
           closedAt: closedAt ? new Date(closedAt) : undefined,
-          status: status as any,
+          status,
           notes,
           ruleBreaks: ruleBreak ? [{ rule: ruleBreak, severity: 1 }] : undefined,
         });
@@ -219,7 +220,7 @@ function TradeForm({ onClose, initial }: { onClose: () => void; initial?: Serial
           <span className="text-[12px] text-[#66746f]">Session</span>
           <select
             value={session}
-            onChange={(e) => setSession(e.target.value)}
+            onChange={(e) => setSession(e.target.value as SessionName)}
             className="mt-1 h-9 w-full rounded-md border border-[#cfd8d4] bg-white px-3"
           >
             {["PRE_MARKET", "OPEN", "MIDDAY", "CLOSE", "POST_MARKET"].map((s) => (
@@ -231,7 +232,7 @@ function TradeForm({ onClose, initial }: { onClose: () => void; initial?: Serial
           <span className="text-[12px] text-[#66746f]">Status</span>
           <select
             value={status}
-            onChange={(e) => setStatus(e.target.value)}
+            onChange={(e) => setStatus(e.target.value as TradeStatus)}
             className="mt-1 h-9 w-full rounded-md border border-[#cfd8d4] bg-white px-3"
           >
             <option value="CLOSED">Closed</option>

@@ -34,7 +34,7 @@ const createTradeSchema = z.object({
   })).optional(),
 });
 
-export async function createTrade(input: z.infer<typeof createTradeSchema>) {
+export async function createTrade(input: z.input<typeof createTradeSchema>) {
   const userId = await requireUser();
   const data = createTradeSchema.parse(input);
 
@@ -141,7 +141,7 @@ export async function deleteTrade(id: string) {
   revalidatePath("/");
 }
 
-export async function bulkCreateTrades(trades: z.infer<typeof createTradeSchema>[]) {
+export async function bulkCreateTrades(trades: z.input<typeof createTradeSchema>[]) {
   const userId = await requireUser();
   const results = [];
 

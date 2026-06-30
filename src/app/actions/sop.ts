@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 
 async function requireUser() {
   const session = await getServerSession(authOptions);
@@ -31,7 +31,7 @@ export async function createSopDocument(title: string, content: Record<string, u
       versions: {
         create: {
           version: "1.0.0",
-          content: content as any,
+          content: content as Prisma.InputJsonValue,
           changeLog: "Initial version",
         },
       },
@@ -61,7 +61,7 @@ export async function publishSopVersion(sopId: string, content: Record<string, u
     data: {
       sopId,
       version: nextVersion,
-      content: content as any,
+      content: content as Prisma.InputJsonValue,
       changeLog,
     },
   });

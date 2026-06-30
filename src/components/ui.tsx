@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Check, ChevronDown, Search, SlidersHorizontal, Upload } from "lucide-react";
+import { Check, SlidersHorizontal, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { gradeTone } from "@/lib/context-engine";
 import type { Grade } from "@/lib/domain";
