@@ -3,20 +3,42 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { computeEquityCurve } from "@/lib/utils";
 import { DashboardView } from "@/components/modules/dashboard";
+import { parseDateRangeSearchParams, sessionsToDbValues, type DateRangeSearchParams } from "@/lib/date-range";
+import type { SessionName as DbSessionName } from "@prisma/client";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<DateRangeSearchParams>;
+}) {
   const session = await getServerSession(authOptions);
   const userId = session!.user!.id;
+  const { range, sessions } = parseDateRangeSearchParams(await searchParams);
+  const sessionDbValues = sessionsToDbValues(sessions) as DbSessionName[];
+
+  const dateFilter =
+    range.from || range.to
+      ? { ...(range.from ? { gte: range.from } : {}), ...(range.to ? { lte: range.to } : {}) }
+      : undefined;
 
   const [opportunities, trades, playbooks] = await Promise.all([
     prisma.opportunity.findMany({
-      where: { userId },
+      where: {
+        userId,
+        ...(dateFilter ? { plannedAt: dateFilter } : {}),
+        ...(sessionDbValues.length ? { sessionName: { in: sessionDbValues } } : {}),
+      },
       include: { contextTags: true, entries: true },
       orderBy: { plannedAt: "desc" },
       take: 20,
     }),
     prisma.trade.findMany({
-      where: { userId, status: "CLOSED" },
+      where: {
+        userId,
+        status: "CLOSED",
+        ...(dateFilter ? { openedAt: dateFilter } : {}),
+        ...(sessionDbValues.length ? { sessionName: { in: sessionDbValues } } : {}),
+      },
       include: { ruleBreaks: true },
       orderBy: { openedAt: "desc" },
       take: 50,

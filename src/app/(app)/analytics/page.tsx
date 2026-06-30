@@ -1,17 +1,21 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { getTrades } from "@/app/actions/trades";
 import { AnalyticsView } from "@/components/modules/analytics";
+import { parseDateRangeSearchParams, sessionsToDbValues, type DateRangeSearchParams } from "@/lib/date-range";
+import type { SessionName as DbSessionName } from "@prisma/client";
 
-export default async function AnalyticsPage() {
-  const session = await getServerSession(authOptions);
-  const userId = session!.user!.id;
+export default async function AnalyticsPage({
+  searchParams,
+}: {
+  searchParams: Promise<DateRangeSearchParams>;
+}) {
+  const { range, sessions } = parseDateRangeSearchParams(await searchParams);
 
-  const trades = await prisma.trade.findMany({
-    where: { userId, status: "CLOSED" },
-    include: { ruleBreaks: true },
-    orderBy: { openedAt: "asc" },
+  const trades = await getTrades({
+    from: range.from,
+    to: range.to,
+    status: "CLOSED",
+    sessionNames: sessionsToDbValues(sessions) as DbSessionName[],
   });
 
-  return <AnalyticsView trades={JSON.parse(JSON.stringify(trades))} />;
+  return <AnalyticsView trades={JSON.parse(JSON.stringify(trades.slice().reverse()))} />;
 }

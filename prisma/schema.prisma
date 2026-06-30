@@ -100,15 +100,17 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts      Account[]
-  sessions      Session[]
-  opportunities Opportunity[]
-  trades        Trade[]
-  sopDocuments  SOPDocument[]
-  playbookSetups PlaybookSetup[]
-  reviews       Review[]
-  reports       Report[]
-  importBatches ImportBatch[]
+  accounts              Account[]
+  sessions              Session[]
+  opportunities         Opportunity[]
+  trades                Trade[]
+  sopDocuments          SOPDocument[]
+  playbookSetups        PlaybookSetup[]
+  reviews               Review[]
+  reports               Report[]
+  importBatches         ImportBatch[]
+  contextTagDefinitions ContextTagDefinition[]
+  ruleBreakDefinitions  RuleBreakDefinition[]
 }
 
 model Account {
@@ -147,25 +149,25 @@ model VerificationToken {
 }
 
 model Opportunity {
-  id                 String            @id @default(cuid())
-  userId             String
-  ticker             String
-  pair               String?
-  setupName          String
-  market             String            @default("Futures")
-  bias               String
-  primaryContext     String
-  sessionName        SessionName
-  status             OpportunityStatus @default(PLANNED)
-  confirmationCount  Int               @default(0)
-  grade              Grade             @default(C)
-  plannedAt          DateTime          @default(now())
-  takenAt            DateTime?
-  riskReward         Decimal?          @db.Decimal(8, 2)
-  qualityScore       Int               @default(0)
-  notes              String?           @db.Text
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
+  id                String            @id @default(cuid())
+  userId            String
+  ticker            String
+  pair              String?
+  setupName         String
+  market            String            @default("Futures")
+  bias              String
+  primaryContext    String
+  sessionName       SessionName
+  status            OpportunityStatus @default(PLANNED)
+  confirmationCount Int               @default(0)
+  grade             Grade             @default(C)
+  plannedAt         DateTime          @default(now())
+  takenAt           DateTime?
+  riskReward        Decimal?          @db.Decimal(8, 2)
+  qualityScore      Int               @default(0)
+  notes             String?           @db.Text
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   contextTags ContextTag[]
@@ -180,11 +182,11 @@ model Opportunity {
 }
 
 model ContextTag {
-  id            String   @id @default(cuid())
+  id            String  @id @default(cuid())
   opportunityId String
   name          String
-  enabled       Boolean  @default(false)
-  weight        Int      @default(1)
+  enabled       Boolean @default(false)
+  weight        Int     @default(1)
   note          String?
 
   opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
@@ -262,8 +264,8 @@ model Screenshot {
   caption       String?
   createdAt     DateTime       @default(now())
 
-  opportunity Opportunity?  @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
-  trade       Trade?        @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  opportunity Opportunity?   @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  trade       Trade?         @relation(fields: [tradeId], references: [id], onDelete: Cascade)
   playbook    PlaybookSetup? @relation(fields: [playbookId], references: [id], onDelete: Cascade)
 
   @@index([opportunityId, tradeId, playbookId])
@@ -286,12 +288,12 @@ model Review {
 }
 
 model SOPDocument {
-  id          String       @id @default(cuid())
-  userId      String
-  title       String
-  active      Boolean      @default(true)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   versions SOPVersion[]
@@ -347,16 +349,42 @@ model Report {
   @@index([userId, period, startsAt])
 }
 
+model ContextTagDefinition {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  active    Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+}
+
+model RuleBreakDefinition {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  active    Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+}
+
 model ImportBatch {
-  id          String   @id @default(cuid())
-  userId      String
-  fileName    String
-  fileType    String
-  rowCount    Int
-  validRows   Int
-  errorRows   Int
-  mapping     Json
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  userId    String
+  fileName  String
+  fileType  String
+  rowCount  Int
+  validRows Int
+  errorRows Int
+  mapping   Json
+  createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

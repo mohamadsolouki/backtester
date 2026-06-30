@@ -8,7 +8,12 @@ import type { Grade } from "@/lib/domain";
 
 export function Surface({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <section className={cn("rounded-md border border-[#dbe2df] bg-white p-3 shadow-soft", className)}>
+    <section
+      className={cn(
+        "rounded-md border border-[var(--line)] bg-[var(--panel)] p-3 text-[var(--ink)] shadow-soft",
+        className
+      )}
+    >
       {children}
     </section>
   );
@@ -31,10 +36,10 @@ export function ModuleShell({
 }) {
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-[#dbe2df] bg-white p-4 shadow-soft">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-[var(--line)] bg-[var(--panel)] p-4 text-[var(--ink)] shadow-soft">
         <div>
           <h1 className="text-[20px] font-semibold tracking-[-0.01em]">{title}</h1>
-          <p className="mt-1 max-w-3xl text-[13px] text-[#66746f]">{description}</p>
+          <p className="mt-1 max-w-3xl text-[13px] text-[var(--muted)]">{description}</p>
         </div>
         {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
       </div>
@@ -61,7 +66,7 @@ export function ActionButton({
       type={type ?? "button"}
       onClick={onClick}
       disabled={disabled}
-      className="flex h-9 items-center gap-2 rounded-md border border-[#b7d5d2] bg-white px-3 text-[12px] font-semibold text-[#08746f] hover:bg-[#effaf8] disabled:opacity-50"
+      className="flex h-9 items-center gap-2 rounded-md border border-[var(--teal)]/40 bg-[var(--panel)] px-3 text-[12px] font-semibold text-[var(--teal-dark)] hover:bg-[var(--panel-soft)] disabled:opacity-50"
     >
       <Icon className="h-3.5 w-3.5" />
       {children}
@@ -103,7 +108,7 @@ export function GradeBadge({ grade }: { grade: string }) {
 export function Kpi({ label, value }: { label: string; value: string }) {
   return (
     <Surface>
-      <div className="text-[12px] text-[#66746f]">{label}</div>
+      <div className="text-[12px] text-[var(--muted)]">{label}</div>
       <div className="mt-1 text-[22px] font-semibold tracking-[-0.02em]">{value}</div>
     </Surface>
   );
@@ -119,7 +124,7 @@ export function Segmented({
   onChange: (value: string) => void;
 }) {
   return (
-    <div className="flex h-8 overflow-hidden rounded-md border border-[#cfd8d4]">
+    <div className="flex h-8 overflow-hidden rounded-md border border-[var(--line)]">
       {options.map((option) => (
         <button
           key={option}
@@ -127,8 +132,8 @@ export function Segmented({
           className={cn(
             "px-3 text-[12px] font-medium",
             value === option
-              ? "bg-[#0f9f95] text-white"
-              : "bg-white text-[#263331] hover:bg-[#f0f4f1]"
+              ? "bg-[var(--teal)] text-white"
+              : "bg-[var(--panel)] text-[var(--ink)] hover:bg-[var(--panel-soft)]"
           )}
         >
           {option}
@@ -141,8 +146,8 @@ export function Segmented({
 export function KeyValue({ label, value }: { label: string; value: string }) {
   return (
     <div className="grid grid-cols-[135px_1fr] text-[13px]">
-      <span className="text-[#44524d]">{label}</span>
-      <span className="font-medium text-[#263331]">{value}</span>
+      <span className="text-[var(--muted)]">{label}</span>
+      <span className="font-medium text-[var(--ink)]">{value}</span>
     </div>
   );
 }
@@ -152,7 +157,7 @@ export function Checkbox({ checked }: { checked: boolean }) {
     <span
       className={cn(
         "flex h-4 w-4 shrink-0 items-center justify-center rounded border",
-        checked ? "border-[#0f9f95] bg-[#0f9f95] text-white" : "border-[#98a5a0] bg-white"
+        checked ? "border-[var(--teal)] bg-[var(--teal)] text-white" : "border-[var(--line)] bg-[var(--panel)]"
       )}
     >
       {checked && <Check className="h-3 w-3" />}
@@ -170,10 +175,10 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex min-h-56 flex-col items-center justify-center rounded-md border border-dashed border-[#cfd8d4] p-8 text-center">
-      <SlidersHorizontal className="h-8 w-8 text-[#0f9f95]" />
+    <div className="flex min-h-56 flex-col items-center justify-center rounded-md border border-dashed border-[var(--line)] p-8 text-center">
+      <SlidersHorizontal className="h-8 w-8 text-[var(--teal)]" />
       <div className="mt-3 font-semibold">{title}</div>
-      <p className="mt-1 max-w-md text-[13px] text-[#66746f]">{description}</p>
+      <p className="mt-1 max-w-md text-[13px] text-[var(--muted)]">{description}</p>
       {action && <div className="mt-4">{action}</div>}
     </div>
   );
@@ -196,14 +201,14 @@ export function TextField({
 }) {
   return (
     <label>
-      <span className="text-[12px] text-[#66746f]">{label}</span>
+      <span className="text-[12px] text-[var(--muted)]">{label}</span>
       <input
         type={type ?? "text"}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         required={required}
-        className="mt-1 h-9 w-full rounded-md border border-[#cfd8d4] bg-white px-3 outline-none focus:border-[#0f9f95]"
+        className="mt-1 h-9 w-full rounded-md border border-[var(--line)] bg-[var(--panel)] px-3 text-[var(--ink)] outline-none focus:border-[var(--teal)]"
       />
     </label>
   );
@@ -222,13 +227,13 @@ export function NumberField({
 }) {
   return (
     <label>
-      <span className="text-[12px] text-[#66746f]">{label}</span>
+      <span className="text-[12px] text-[var(--muted)]">{label}</span>
       <input
         type="number"
         value={value}
         step={step}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="mt-1 h-9 w-full rounded-md border border-[#cfd8d4] bg-white px-3 outline-none focus:border-[#0f9f95]"
+        className="mt-1 h-9 w-full rounded-md border border-[var(--line)] bg-[var(--panel)] px-3 text-[var(--ink)] outline-none focus:border-[var(--teal)]"
       />
     </label>
   );

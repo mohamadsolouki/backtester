@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import type { SessionName as DbSessionName } from "@prisma/client";
 import { z } from "zod";
 
 async function requireUser() {
@@ -73,6 +74,7 @@ export async function getTrades(filters?: {
   ticker?: string;
   direction?: "LONG" | "SHORT";
   status?: "OPEN" | "CLOSED" | "SCRATCH";
+  sessionNames?: DbSessionName[];
 }) {
   const userId = await requireUser();
   return prisma.trade.findMany({
@@ -89,6 +91,7 @@ export async function getTrades(filters?: {
       ...(filters?.ticker ? { ticker: filters.ticker } : {}),
       ...(filters?.direction ? { direction: filters.direction } : {}),
       ...(filters?.status ? { status: filters.status } : {}),
+      ...(filters?.sessionNames?.length ? { sessionName: { in: filters.sessionNames } } : {}),
     },
     include: { ruleBreaks: true, review: true, screenshots: true, opportunity: true },
     orderBy: { openedAt: "desc" },

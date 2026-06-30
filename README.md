@@ -1,6 +1,6 @@
-# Trading Intelligence Platform
+# Trade OS
 
-Internal operating system for discretionary trading: opportunity tracking, context grading, E1/E2/E3 entry planning, trade journaling, SOP/playbook discipline, backtest analytics, reports, and CSV/XLSX import-export.
+Internal operating system for discretionary trading: opportunity tracking, context grading, E1/E2/E3 entry planning, trade journaling, routine/playbook discipline, edge analytics, reports, and CSV/XLSX import-export.
 
 ## Stack
 
@@ -32,13 +32,13 @@ https://backtester-teal.vercel.app
 
 ## Intended User Journey
 
-1. Start in `Dashboard` to check the daily plan, risk rules, SOP completion, and next action.
-2. Use `Opportunities` to create or import ideas before they become trades.
-3. Use `Context Engine` to tag independent confirmations and let the app auto-count confirmations and auto-grade the opportunity.
+1. Start in `Overview` to check the daily plan, risk rules, routine completion, and next action.
+2. Use `Watchlist` to create or import ideas before they become trades.
+3. Use the Context Engine tab on an opportunity to tag independent confirmations and let the app auto-count confirmations and auto-grade the opportunity.
 4. Use `Playbook` to compare the setup against valid/invalid conditions and set E1/E2/E3 entry states.
-5. Return to `Opportunities` to mark the decision as Taken, Skipped, or Not Formed.
-6. Use `Trade Journal` to review execution quality and capture the lesson.
-7. Use `Analytics` and `Reports` to review win rate, expectancy, context quality, session quality, and rule breaks.
+5. Return to `Watchlist` to mark the decision as Taken, Skipped, or Not Formed.
+6. Use `Journal` to review execution quality and capture the lesson.
+7. Use `Analytics`, `Edge Lab`, and `Reports` to review win rate, expectancy, context quality, session quality, and rule breaks.
 8. Use `Settings` to tune risk limits and import mappings.
 
 The dashboard workflow rail mirrors this path so the user always has a clear next step.

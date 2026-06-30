@@ -4,9 +4,12 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import type { SessionName, OpportunityStatus, EntryType, EntryStatus } from "@prisma/client";
-import { Surface, SectionTitle, ModuleShell, ActionButton, StatusPill, GradeBadge, Segmented, TextField, EmptyState } from "@/components/ui";
+import { Surface, SectionTitle, ModuleShell, ActionButton, StatusPill, GradeBadge, Segmented, EmptyState } from "@/components/ui";
+import { Combobox } from "@/components/ui/combobox";
 import { cn } from "@/lib/utils";
 import { createOpportunity, updateOpportunityStatus, toggleContextTag, updateEntry, deleteOpportunity } from "@/app/actions/opportunities";
+
+const BIAS_OPTIONS = ["Bullish", "Bearish", "Neutral"] as const;
 
 type SerializedOpp = {
   id: string;
@@ -30,7 +33,17 @@ type SerializedOpp = {
 
 type StatusFilter = "All" | "WATCHING" | "TAKEN" | "SKIPPED" | "NOT_FORMED";
 
-export function OpportunitiesView({ opportunities }: { opportunities: SerializedOpp[] }) {
+export function OpportunitiesView({
+  opportunities,
+  tickerOptions,
+  setupOptions,
+  primaryContextOptions,
+}: {
+  opportunities: SerializedOpp[];
+  tickerOptions: string[];
+  setupOptions: string[];
+  primaryContextOptions: string[];
+}) {
   const [filter, setFilter] = useState<StatusFilter>("All");
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(opportunities[0]?.id ?? null);
@@ -52,7 +65,14 @@ export function OpportunitiesView({ opportunities }: { opportunities: Serialized
         <ActionButton icon={Plus} onClick={() => setShowForm(true)}>New Opportunity</ActionButton>
       }
     >
-      {showForm && <NewOpportunityForm onClose={() => setShowForm(false)} />}
+      {showForm && (
+        <NewOpportunityForm
+          onClose={() => setShowForm(false)}
+          tickerOptions={tickerOptions}
+          setupOptions={setupOptions}
+          primaryContextOptions={primaryContextOptions}
+        />
+      )}
 
       <div className="grid grid-cols-[1fr_360px] gap-2 max-[1080px]:grid-cols-1">
         <Surface>
@@ -67,7 +87,7 @@ export function OpportunitiesView({ opportunities }: { opportunities: Serialized
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search..."
-                className="h-8 w-full rounded-md border border-[#cfd8d4] bg-white pl-3 pr-3 text-[13px] outline-none focus:border-[#0f9f95]"
+                className="h-8 w-full rounded-md border border-[var(--line)] bg-[var(--panel)] pl-3 pr-3 text-[13px] outline-none focus:border-[var(--teal)]"
               />
             </label>
           </div>
@@ -76,7 +96,7 @@ export function OpportunitiesView({ opportunities }: { opportunities: Serialized
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[600px] text-left text-[12px]">
-                <thead className="border-y border-[#e4ebe8] text-[#5f6d68]">
+                <thead className="border-y border-[var(--line)] text-[var(--muted)]">
                   <tr>
                     {["Ticker", "Setup", "Bias", "Session", "Status", "Conf", "Grade"].map((h) => (
                       <th key={h} className="h-9 px-2 font-semibold">{h}</th>
@@ -89,8 +109,8 @@ export function OpportunitiesView({ opportunities }: { opportunities: Serialized
                       key={o.id}
                       onClick={() => setSelectedId(o.id)}
                       className={cn(
-                        "cursor-pointer border-b border-[#edf1ef] hover:bg-[#f5faf8]",
-                        selectedId === o.id && "bg-[#effaf8]"
+                        "cursor-pointer border-b border-[var(--line)] hover:bg-[var(--panel-soft)]",
+                        selectedId === o.id && "bg-[var(--panel-soft)]"
                       )}
                     >
                       <td className="h-10 px-2 font-semibold">{o.ticker}</td>
@@ -114,11 +134,21 @@ export function OpportunitiesView({ opportunities }: { opportunities: Serialized
   );
 }
 
-function NewOpportunityForm({ onClose }: { onClose: () => void }) {
+function NewOpportunityForm({
+  onClose,
+  tickerOptions,
+  setupOptions,
+  primaryContextOptions,
+}: {
+  onClose: () => void;
+  tickerOptions: string[];
+  setupOptions: string[];
+  primaryContextOptions: string[];
+}) {
   const [pending, startTransition] = useTransition();
   const [ticker, setTicker] = useState("");
   const [setup, setSetup] = useState("");
-  const [bias, setBias] = useState("");
+  const [bias, setBias] = useState<(typeof BIAS_OPTIONS)[number]>("Bullish");
   const [context, setContext] = useState("");
   const [session, setSession] = useState<SessionName>("OPEN");
 
@@ -137,27 +167,44 @@ function NewOpportunityForm({ onClose }: { onClose: () => void }) {
     <Surface>
       <div className="flex items-center justify-between">
         <SectionTitle>New Opportunity</SectionTitle>
-        <button onClick={onClose} className="text-[12px] text-[#66746f]">Cancel</button>
+        <button onClick={onClose} className="text-[12px] text-[var(--muted)]">Cancel</button>
       </div>
       <div className="mt-3 grid grid-cols-3 gap-3 max-[768px]:grid-cols-1">
-        <TextField label="Ticker" value={ticker} onChange={setTicker} required placeholder="NQ" />
-        <TextField label="Setup" value={setup} onChange={setSetup} required placeholder="Momentum Break" />
+        <Combobox label="Ticker" value={ticker} onChange={setTicker} options={tickerOptions} required placeholder="NQ" />
+        <Combobox label="Setup" value={setup} onChange={setSetup} options={setupOptions} required placeholder="Momentum Break" />
         <label>
-          <span className="text-[12px] text-[#66746f]">Session</span>
-          <select value={session} onChange={(e) => setSession(e.target.value as SessionName)} className="mt-1 h-9 w-full rounded-md border border-[#cfd8d4] bg-white px-3">
+          <span className="text-[12px] text-[var(--muted)]">Session</span>
+          <select value={session} onChange={(e) => setSession(e.target.value as SessionName)} className="mt-1 h-9 w-full rounded-md border border-[var(--line)] bg-[var(--panel)] px-3">
             {["PRE_MARKET", "OPEN", "MIDDAY", "CLOSE", "POST_MARKET"].map((s) => (
               <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
             ))}
           </select>
         </label>
-        <TextField label="Bias" value={bias} onChange={setBias} required placeholder="Bullish" />
+        <label>
+          <span className="text-[12px] text-[var(--muted)]">Bias</span>
+          <select
+            value={bias}
+            onChange={(e) => setBias(e.target.value as (typeof BIAS_OPTIONS)[number])}
+            className="mt-1 h-9 w-full rounded-md border border-[var(--line)] bg-[var(--panel)] px-3"
+          >
+            {BIAS_OPTIONS.map((b) => (
+              <option key={b} value={b}>{b}</option>
+            ))}
+          </select>
+        </label>
         <div className="col-span-2 max-[768px]:col-span-1">
-          <TextField label="Primary Context" value={context} onChange={setContext} placeholder="Trend continuation above 20 EMA" />
+          <Combobox
+            label="Primary Context"
+            value={context}
+            onChange={setContext}
+            options={primaryContextOptions}
+            placeholder="Trend continuation above 20 EMA"
+          />
         </div>
       </div>
       <div className="mt-4 flex justify-end gap-2">
-        <button onClick={onClose} className="h-9 rounded-md border border-[#cfd8d4] px-4 text-[12px] font-semibold">Cancel</button>
-        <button onClick={handleSubmit} disabled={pending} className="h-9 rounded-md bg-[#0f9f95] px-6 text-[12px] font-semibold text-white disabled:opacity-50">
+        <button onClick={onClose} className="h-9 rounded-md border border-[var(--line)] px-4 text-[12px] font-semibold">Cancel</button>
+        <button onClick={handleSubmit} disabled={pending} className="h-9 rounded-md bg-[var(--teal)] px-6 text-[12px] font-semibold text-white disabled:opacity-50">
           {pending ? "Creating..." : "Create"}
         </button>
       </div>
@@ -201,23 +248,23 @@ function OpportunityDetail({ opp }: { opp: SerializedOpp }) {
         <div className="flex items-start justify-between">
           <div>
             <SectionTitle>{opp.ticker} — {opp.setupName}</SectionTitle>
-            <p className="mt-1 text-[12px] text-[#66746f]">{opp.primaryContext}</p>
+            <p className="mt-1 text-[12px] text-[var(--muted)]">{opp.primaryContext}</p>
           </div>
           <GradeBadge grade={opp.grade ?? "F"} />
         </div>
         <div className="mt-3 space-y-2 text-[13px]">
-          <div className="flex justify-between"><span className="text-[#66746f]">Bias</span><span className="font-medium">{opp.bias}</span></div>
-          <div className="flex justify-between"><span className="text-[#66746f]">Session</span><span>{opp.sessionName.replace(/_/g, " ")}</span></div>
-          <div className="flex justify-between"><span className="text-[#66746f]">Confirmations</span><span className="font-semibold">{opp.confirmationCount} / 7</span></div>
-          <div className="flex justify-between"><span className="text-[#66746f]">Status</span><StatusPill status={opp.status} /></div>
-          {opp.notes && <p className="mt-2 rounded-md bg-[#f5f7f4] p-3 text-[#34413d]">{opp.notes}</p>}
+          <div className="flex justify-between"><span className="text-[var(--muted)]">Bias</span><span className="font-medium">{opp.bias}</span></div>
+          <div className="flex justify-between"><span className="text-[var(--muted)]">Session</span><span>{opp.sessionName.replace(/_/g, " ")}</span></div>
+          <div className="flex justify-between"><span className="text-[var(--muted)]">Confirmations</span><span className="font-semibold">{opp.confirmationCount} / 7</span></div>
+          <div className="flex justify-between"><span className="text-[var(--muted)]">Status</span><StatusPill status={opp.status} /></div>
+          {opp.notes && <p className="mt-2 rounded-md bg-[var(--panel-soft)] p-3 text-[var(--ink)]">{opp.notes}</p>}
         </div>
         <div className="mt-4 grid grid-cols-3 gap-2">
-          <button onClick={() => setStatus("TAKEN")} disabled={pending} className="h-9 rounded-md bg-[#0f9f95] text-[12px] font-semibold text-white">Taken</button>
-          <button onClick={() => setStatus("SKIPPED")} disabled={pending} className="h-9 rounded-md bg-[#d88912] text-[12px] font-semibold text-white">Skipped</button>
-          <button onClick={() => setStatus("NOT_FORMED")} disabled={pending} className="h-9 rounded-md bg-[#87918d] text-[12px] font-semibold text-white">Not Formed</button>
+          <button onClick={() => setStatus("TAKEN")} disabled={pending} className="h-9 rounded-md bg-[var(--teal)] text-[12px] font-semibold text-white">Taken</button>
+          <button onClick={() => setStatus("SKIPPED")} disabled={pending} className="h-9 rounded-md bg-[var(--amber)] text-[12px] font-semibold text-white">Skipped</button>
+          <button onClick={() => setStatus("NOT_FORMED")} disabled={pending} className="h-9 rounded-md bg-[var(--muted)] text-[12px] font-semibold text-white">Not Formed</button>
         </div>
-        <button onClick={handleDelete} disabled={pending} className="mt-2 w-full text-center text-[12px] text-[#d94848] hover:underline">Delete opportunity</button>
+        <button onClick={handleDelete} disabled={pending} className="mt-2 w-full text-center text-[12px] text-[var(--red)] hover:underline">Delete opportunity</button>
       </Surface>
 
       <Surface>
@@ -230,13 +277,13 @@ function OpportunityDetail({ opp }: { opp: SerializedOpp }) {
               disabled={pending}
               className={cn(
                 "flex w-full items-center justify-between rounded-md border p-3 text-left text-[13px] transition",
-                tag.enabled ? "border-[#89ccc6] bg-[#effaf8]" : "border-[#dbe2df] hover:bg-[#f5f7f4]"
+                tag.enabled ? "border-[var(--teal)]/50 bg-[var(--panel-soft)]" : "border-[var(--line)] hover:bg-[var(--panel-soft)]"
               )}
             >
               <span className="font-medium">{tag.name.replace(/_/g, " ")}</span>
               <span className={cn(
                 "flex h-5 w-5 items-center justify-center rounded border text-[11px]",
-                tag.enabled ? "border-[#0f9f95] bg-[#0f9f95] text-white" : "border-[#98a5a0]"
+                tag.enabled ? "border-[var(--teal)] bg-[var(--teal)] text-white" : "border-[var(--line)]"
               )}>
                 {tag.enabled && "✓"}
               </span>
@@ -255,7 +302,7 @@ function OpportunityDetail({ opp }: { opp: SerializedOpp }) {
                 value={entry.status}
                 onChange={(e) => handleEntryUpdate(entry.type as EntryType, e.target.value as EntryStatus)}
                 disabled={pending}
-                className="h-8 flex-1 rounded-md border border-[#cfd8d4] bg-white px-2 text-[12px]"
+                className="h-8 flex-1 rounded-md border border-[var(--line)] bg-[var(--panel)] px-2 text-[12px]"
               >
                 {["WAITING", "TAKEN", "SKIPPED", "NOT_FORMED"].map((s) => (
                   <option key={s} value={s}>{s.replace(/_/g, " ")}</option>

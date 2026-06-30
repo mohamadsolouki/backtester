@@ -4,8 +4,9 @@ import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import type { SkipReason } from "@prisma/client";
+import type { SessionName as DbSessionName, SkipReason } from "@prisma/client";
 import { z } from "zod";
+import { getContextTagDefinitions } from "@/app/actions/vocab";
 
 async function requireUser() {
   const session = await getServerSession(authOptions);
@@ -25,9 +26,14 @@ const createSchema = z.object({
   notes: z.string().optional(),
 });
 
+/** Contrarian context tags count against confirmation; everything else counts for it. */
+const NEGATIVE_WEIGHT_TAGS = new Set(["Trading Range"]);
+
 export async function createOpportunity(input: z.input<typeof createSchema>) {
   const userId = await requireUser();
   const data = createSchema.parse(input);
+
+  const tagDefinitions = await getContextTagDefinitions();
 
   const opportunity = await prisma.opportunity.create({
     data: {
@@ -43,15 +49,10 @@ export async function createOpportunity(input: z.input<typeof createSchema>) {
       riskReward: data.riskReward,
       notes: data.notes,
       contextTags: {
-        create: [
-          { name: "MTR", weight: 1 },
-          { name: "BTB", weight: 1 },
-          { name: "EMA_DIVERGENCE", weight: 1 },
-          { name: "SPIKE", weight: 1 },
-          { name: "BREAKOUT", weight: 1 },
-          { name: "TRADING_RANGE", weight: -1 },
-          { name: "MICRO_CHANNEL", weight: 1 },
-        ],
+        create: tagDefinitions.map((tag) => ({
+          name: tag.name,
+          weight: NEGATIVE_WEIGHT_TAGS.has(tag.name) ? -1 : 1,
+        })),
       },
       entries: {
         create: [
@@ -68,10 +69,25 @@ export async function createOpportunity(input: z.input<typeof createSchema>) {
   return opportunity;
 }
 
-export async function getOpportunities() {
+export async function getOpportunities(filters?: {
+  from?: Date;
+  to?: Date;
+  sessionNames?: DbSessionName[];
+}) {
   const userId = await requireUser();
   return prisma.opportunity.findMany({
-    where: { userId },
+    where: {
+      userId,
+      ...(filters?.from || filters?.to
+        ? {
+            plannedAt: {
+              ...(filters.from ? { gte: filters.from } : {}),
+              ...(filters.to ? { lte: filters.to } : {}),
+            },
+          }
+        : {}),
+      ...(filters?.sessionNames?.length ? { sessionName: { in: filters.sessionNames } } : {}),
+    },
     include: { contextTags: true, entries: true, trade: true, review: true },
     orderBy: { plannedAt: "desc" },
   });
