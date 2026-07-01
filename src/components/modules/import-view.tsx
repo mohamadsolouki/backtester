@@ -7,7 +7,7 @@ import { Upload, Check, AlertTriangle } from "lucide-react";
 import { Surface, SectionTitle, ModuleShell } from "@/components/ui";
 import { cn, formatCurrency } from "@/lib/utils";
 import { parseMetaTraderFile, parseMT5ExcelRows, type ParseResult } from "@/lib/metatrader";
-import { bulkCreateTrades } from "@/app/actions/trades";
+import { bulkCreateTrades, checkImportDuplicates } from "@/app/actions/trades";
 
 type SerializedBatch = {
   id: string;
@@ -31,21 +31,48 @@ function mapSessionName(date: Date): "PRE_MARKET" | "OPEN" | "MIDDAY" | "CLOSE" 
 export function ImportView({ batches }: { batches: SerializedBatch[] }) {
   const [result, setResult] = useState<ParseResult | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [duplicates, setDuplicates] = useState<Set<number>>(new Set());
+  const [checkingDupes, setCheckingDupes] = useState(false);
   const [importing, startImport] = useTransition();
   const [fileName, setFileName] = useState("");
 
-  function applyParseResult(parsed: ParseResult) {
+  async function applyParseResult(parsed: ParseResult, name: string) {
     setResult(parsed);
-    setSelected(new Set(parsed.trades.map((_, i) => i)));
-    if (parsed.trades.length > 0) {
-      toast.success(`Parsed ${parsed.trades.length} trades (${parsed.format})`);
-    } else {
+    setFileName(name);
+
+    if (parsed.trades.length === 0) {
       toast.error(parsed.errors[0] ?? "No trades found in file");
+      setSelected(new Set());
+      setDuplicates(new Set());
+      return;
+    }
+
+    // Check duplicates against existing trades before showing preview
+    setCheckingDupes(true);
+    try {
+      const dupeFlags = await checkImportDuplicates(
+        parsed.trades.map((t) => ({
+          ticker: t.symbol,
+          direction: t.direction,
+          openedAt: t.openedAt.toISOString(),
+          entryPrice: t.entryPrice,
+        }))
+      );
+      const dupeSet = new Set<number>(dupeFlags.map((d, i) => (d ? i : -1)).filter((i) => i >= 0));
+      setDuplicates(dupeSet);
+      // Auto-select only non-duplicates
+      setSelected(new Set(parsed.trades.map((_, i) => i).filter((i) => !dupeSet.has(i))));
+      const newCount = parsed.trades.length - dupeSet.size;
+      toast.success(`Found ${parsed.trades.length} trades: ${newCount} new, ${dupeSet.size} already imported`);
+    } catch {
+      setSelected(new Set(parsed.trades.map((_, i) => i)));
+      toast.success(`Parsed ${parsed.trades.length} trades`);
+    } finally {
+      setCheckingDupes(false);
     }
   }
 
   function handleFile(file: File) {
-    setFileName(file.name);
     const extension = file.name.split(".").pop()?.toLowerCase();
 
     if (extension === "xlsx" || extension === "xls") {
@@ -57,7 +84,7 @@ export function ImportView({ batches }: { batches: SerializedBatch[] }) {
           raw: true,
           defval: "",
         });
-        applyParseResult(parseMT5ExcelRows(rows));
+        applyParseResult(parseMT5ExcelRows(rows), file.name);
       });
       return;
     }
@@ -65,7 +92,7 @@ export function ImportView({ batches }: { batches: SerializedBatch[] }) {
     const reader = new FileReader();
     reader.onload = (e) => {
       const content = e.target?.result as string;
-      applyParseResult(parseMetaTraderFile(content));
+      applyParseResult(parseMetaTraderFile(content), file.name);
     };
     reader.readAsText(file);
   }
@@ -88,6 +115,11 @@ export function ImportView({ batches }: { batches: SerializedBatch[] }) {
     }
   }
 
+  function selectNewOnly() {
+    if (!result) return;
+    setSelected(new Set(result.trades.map((_, i) => i).filter((i) => !duplicates.has(i))));
+  }
+
   function importSelected() {
     if (!result) return;
     const trades = result.trades
@@ -99,22 +131,33 @@ export function ImportView({ batches }: { batches: SerializedBatch[] }) {
         quantity: t.volume,
         entryPrice: t.entryPrice,
         exitPrice: t.exitPrice || undefined,
-        rMultiple: t.profit > 0 ? Math.abs(t.profit / Math.max(Math.abs(t.entryPrice - (t.stopLoss ?? t.entryPrice)), 1)) : t.profit < 0 ? -Math.abs(t.profit / Math.max(Math.abs(t.entryPrice - (t.stopLoss ?? t.entryPrice)), 1)) : 0,
+        rMultiple: t.profit > 0
+          ? Math.abs(t.profit / Math.max(Math.abs(t.entryPrice - (t.stopLoss ?? t.entryPrice)), 1))
+          : t.profit < 0
+          ? -Math.abs(t.profit / Math.max(Math.abs(t.entryPrice - (t.stopLoss ?? t.entryPrice)), 1))
+          : 0,
         pnl: t.profit,
         fees: Math.abs(t.commission) + Math.abs(t.swap),
         openedAt: t.openedAt,
         closedAt: t.closedAt ?? undefined,
-        status: t.closedAt ? "CLOSED" as const : "OPEN" as const,
+        status: t.closedAt ? ("CLOSED" as const) : ("OPEN" as const),
         notes: t.comment || `Imported from ${fileName} (ticket: ${t.ticket})`,
       }));
 
     startImport(async () => {
-      const { trades: created } = await bulkCreateTrades(trades);
-      toast.success(`Imported ${created.length} trades`);
+      const { trades: created, skipped } = await bulkCreateTrades(trades, fileName);
+      const msg = skipped > 0
+        ? `Imported ${created.length} trades, skipped ${skipped} duplicates`
+        : `Imported ${created.length} trades`;
+      toast.success(msg);
       setResult(null);
       setSelected(new Set());
+      setDuplicates(new Set());
     });
   }
+
+  const newCount = result ? result.trades.filter((_, i) => !duplicates.has(i)).length : 0;
+  const dupeCount = duplicates.size;
 
   return (
     <ModuleShell
@@ -144,17 +187,37 @@ export function ImportView({ batches }: { batches: SerializedBatch[] }) {
         </div>
       </Surface>
 
-      {result && result.trades.length > 0 && (
+      {checkingDupes && (
         <Surface>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 py-4 text-[13px] text-[var(--muted)]">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--teal)] border-t-transparent" />
+            Checking for duplicates against your existing trades…
+          </div>
+        </Surface>
+      )}
+
+      {result && result.trades.length > 0 && !checkingDupes && (
+        <Surface>
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <SectionTitle>Preview — {fileName}</SectionTitle>
-              <p className="mt-1 text-[12px] text-[var(--muted)]">
-                {result.trades.length} trades found ({result.format}) · {selected.size} selected
-                {result.errors.length > 0 && ` · ${result.errors.length} errors`}
-              </p>
+              <div className="mt-1 flex flex-wrap gap-3 text-[12px] text-[var(--muted)]">
+                <span>{result.trades.length} total</span>
+                {dupeCount > 0 && (
+                  <span className="font-medium text-[var(--amber)]">
+                    {dupeCount} already imported
+                  </span>
+                )}
+                <span className="font-medium text-[var(--teal-dark)]">{newCount} new</span>
+                <span>{selected.size} selected</span>
+              </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
+              {dupeCount > 0 && (
+                <button onClick={selectNewOnly} className="h-8 rounded-md border border-[var(--line)] px-3 text-[12px] font-medium hover:bg-[var(--panel-soft)]">
+                  New Only
+                </button>
+              )}
               <button onClick={toggleAll} className="h-8 rounded-md border border-[var(--line)] px-3 text-[12px] font-medium hover:bg-[var(--panel-soft)]">
                 {selected.size === result.trades.length ? "Deselect All" : "Select All"}
               </button>
@@ -175,8 +238,15 @@ export function ImportView({ batches }: { batches: SerializedBatch[] }) {
               </div>
               <div className="mt-2 space-y-1 text-[12px] text-[var(--amber)]">
                 {result.errors.slice(0, 5).map((err, i) => <div key={i}>{err}</div>)}
-                {result.errors.length > 5 && <div>...and {result.errors.length - 5} more</div>}
+                {result.errors.length > 5 && <div>…and {result.errors.length - 5} more</div>}
               </div>
+            </div>
+          )}
+
+          {dupeCount > 0 && (
+            <div className="mt-3 rounded-md border border-[var(--amber)]/30 bg-[var(--amber)]/8 p-3 text-[12px] text-[var(--amber)]">
+              <span className="font-semibold">Duplicate rows are highlighted in amber</span> — they match trades already in your journal.
+              They are auto-deselected but you can re-check them to force re-import.
             </div>
           )}
 
@@ -188,44 +258,57 @@ export function ImportView({ batches }: { batches: SerializedBatch[] }) {
                   {["Ticket", "Symbol", "Dir", "Volume", "Entry", "Exit", "P&L", "Commission", "Opened", "Closed"].map((h) => (
                     <th key={h} className="h-9 px-2 font-semibold">{h}</th>
                   ))}
+                  <th className="h-9 px-2"></th>
                 </tr>
               </thead>
               <tbody>
-                {result.trades.map((t, i) => (
-                  <tr
-                    key={i}
-                    onClick={() => toggleTrade(i)}
-                    className={cn(
-                      "cursor-pointer border-b border-[var(--line)] hover:bg-[var(--panel-soft)]",
-                      selected.has(i) && "bg-[var(--panel-soft)]"
-                    )}
-                  >
-                    <td className="px-2">
-                      <span className={cn(
-                        "flex h-4 w-4 items-center justify-center rounded border",
-                        selected.has(i) ? "border-[var(--teal)] bg-[var(--teal)] text-white" : "border-[var(--line)]"
-                      )}>
-                        {selected.has(i) && <Check className="h-3 w-3" />}
-                      </span>
-                    </td>
-                    <td className="h-10 px-2">{t.ticket}</td>
-                    <td className="px-2 font-semibold">{t.symbol}</td>
-                    <td className="px-2">
-                      <span className={cn("font-medium", t.direction === "LONG" ? "text-[var(--teal-dark)]" : "text-[var(--red)]")}>
-                        {t.direction}
-                      </span>
-                    </td>
-                    <td className="px-2">{t.volume}</td>
-                    <td className="px-2">{t.entryPrice.toFixed(5)}</td>
-                    <td className="px-2">{t.exitPrice.toFixed(5)}</td>
-                    <td className={cn("px-2 font-semibold", t.profit >= 0 ? "text-[var(--teal-dark)]" : "text-[var(--red)]")}>
-                      {formatCurrency(t.profit)}
-                    </td>
-                    <td className="px-2">{formatCurrency(t.commission)}</td>
-                    <td className="px-2">{t.openedAt.toLocaleString()}</td>
-                    <td className="px-2">{t.closedAt?.toLocaleString() ?? "Open"}</td>
-                  </tr>
-                ))}
+                {result.trades.map((t, i) => {
+                  const isDupe = duplicates.has(i);
+                  const isSel = selected.has(i);
+                  return (
+                    <tr
+                      key={i}
+                      onClick={() => toggleTrade(i)}
+                      className={cn(
+                        "cursor-pointer border-b border-[var(--line)] hover:bg-[var(--panel-soft)]",
+                        isSel && !isDupe && "bg-[var(--panel-soft)]",
+                        isDupe && "bg-[var(--amber)]/5"
+                      )}
+                    >
+                      <td className="px-2">
+                        <span className={cn(
+                          "flex h-4 w-4 items-center justify-center rounded border",
+                          isSel ? "border-[var(--teal)] bg-[var(--teal)] text-white" : "border-[var(--line)]"
+                        )}>
+                          {isSel && <Check className="h-3 w-3" />}
+                        </span>
+                      </td>
+                      <td className="h-10 px-2">{t.ticket}</td>
+                      <td className="px-2 font-semibold">{t.symbol}</td>
+                      <td className="px-2">
+                        <span className={cn("font-medium", t.direction === "LONG" ? "text-[var(--teal-dark)]" : "text-[var(--red)]")}>
+                          {t.direction}
+                        </span>
+                      </td>
+                      <td className="px-2">{t.volume}</td>
+                      <td className="px-2">{t.entryPrice.toFixed(5)}</td>
+                      <td className="px-2">{t.exitPrice.toFixed(5)}</td>
+                      <td className={cn("px-2 font-semibold", t.profit >= 0 ? "text-[var(--teal-dark)]" : "text-[var(--red)]")}>
+                        {formatCurrency(t.profit)}
+                      </td>
+                      <td className="px-2">{formatCurrency(t.commission)}</td>
+                      <td className="px-2">{t.openedAt.toLocaleString()}</td>
+                      <td className="px-2">{t.closedAt?.toLocaleString() ?? "Open"}</td>
+                      <td className="px-2">
+                        {isDupe && (
+                          <span className="rounded-full bg-[var(--amber)]/20 px-2 py-0.5 text-[10px] font-semibold text-[var(--amber)]">
+                            duplicate
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -239,7 +322,7 @@ export function ImportView({ batches }: { batches: SerializedBatch[] }) {
             <table className="w-full text-left text-[12px]">
               <thead className="border-y border-[var(--line)] text-[var(--muted)]">
                 <tr>
-                  {["Date", "File", "Type", "Rows", "Valid", "Errors"].map((h) => (
+                  {["Date", "File", "Type", "Rows", "Imported", "Skipped"].map((h) => (
                     <th key={h} className="h-9 px-2 font-semibold">{h}</th>
                   ))}
                 </tr>
@@ -252,7 +335,7 @@ export function ImportView({ batches }: { batches: SerializedBatch[] }) {
                     <td className="px-2">{b.fileType}</td>
                     <td className="px-2">{b.rowCount}</td>
                     <td className="px-2 text-[var(--teal-dark)]">{b.validRows}</td>
-                    <td className="px-2">{b.errorRows > 0 ? <span className="text-[var(--red)]">{b.errorRows}</span> : "0"}</td>
+                    <td className="px-2">{b.errorRows > 0 ? <span className="text-[var(--amber)]">{b.errorRows}</span> : "0"}</td>
                   </tr>
                 ))}
               </tbody>

@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Check, Plus, X } from "lucide-react";
+import { Check, Plus, Trash2, X } from "lucide-react";
 import { Surface, SectionTitle, ModuleShell, NumberField, ActionButton, Segmented } from "@/components/ui";
 import { updateUserSettings } from "@/app/actions/settings";
+import { clearAllTrades } from "@/app/actions/trades";
 import {
   createContextTagDefinition,
   createRuleBreakDefinition,
@@ -82,24 +83,27 @@ export function SettingsView({
       }
     >
       {tab === "General" ? (
-        <Surface>
-          <div className="flex items-center justify-between">
-            <SectionTitle>Risk Configuration</SectionTitle>
-            <ActionButton icon={Check} onClick={save} disabled={pending}>
-              {pending ? "Saving..." : "Save Settings"}
-            </ActionButton>
-          </div>
-          <p className="mt-1 text-[12px] text-[var(--muted)]">
-            Reference values shown across the app — they don&apos;t block trade entry automatically. Synced to your account.
-          </p>
-          <div className="mt-4 grid grid-cols-2 gap-3 max-[560px]:grid-cols-1">
-            <NumberField label="Risk per Trade %" value={settings.riskPerTrade} onChange={(v) => update("riskPerTrade", v)} step="0.05" />
-            <NumberField label="Max Daily Loss $" value={settings.maxDailyLoss} onChange={(v) => update("maxDailyLoss", v)} />
-            <NumberField label="Max Open Risk %" value={settings.maxOpenRisk} onChange={(v) => update("maxOpenRisk", v)} step="0.1" />
-            <NumberField label="Max Trades / Day" value={settings.maxTrades} onChange={(v) => update("maxTrades", v)} />
-            <NumberField label="Min R Multiple" value={settings.minR} onChange={(v) => update("minR", v)} step="0.1" />
-          </div>
-        </Surface>
+        <div className="space-y-3">
+          <Surface>
+            <div className="flex items-center justify-between">
+              <SectionTitle>Risk Configuration</SectionTitle>
+              <ActionButton icon={Check} onClick={save} disabled={pending}>
+                {pending ? "Saving..." : "Save Settings"}
+              </ActionButton>
+            </div>
+            <p className="mt-1 text-[12px] text-[var(--muted)]">
+              Reference values shown across the app — they don&apos;t block trade entry automatically. Synced to your account.
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-3 max-[560px]:grid-cols-1">
+              <NumberField label="Risk per Trade %" value={settings.riskPerTrade} onChange={(v) => update("riskPerTrade", v)} step="0.05" />
+              <NumberField label="Max Daily Loss $" value={settings.maxDailyLoss} onChange={(v) => update("maxDailyLoss", v)} />
+              <NumberField label="Max Open Risk %" value={settings.maxOpenRisk} onChange={(v) => update("maxOpenRisk", v)} step="0.1" />
+              <NumberField label="Max Trades / Day" value={settings.maxTrades} onChange={(v) => update("maxTrades", v)} />
+              <NumberField label="Min R Multiple" value={settings.minR} onChange={(v) => update("minR", v)} step="0.1" />
+            </div>
+          </Surface>
+          <DangerZone />
+        </div>
       ) : (
         <div className="grid grid-cols-2 gap-2 max-[768px]:grid-cols-1">
           <VocabPanel
@@ -119,6 +123,59 @@ export function SettingsView({
         </div>
       )}
     </ModuleShell>
+  );
+}
+
+function DangerZone() {
+  const [pending, startTransition] = useTransition();
+  const [confirm, setConfirm] = useState(false);
+
+  function handleClear() {
+    if (!confirm) { setConfirm(true); return; }
+    startTransition(async () => {
+      await clearAllTrades();
+      toast.success("All trades and import history cleared");
+      setConfirm(false);
+    });
+  }
+
+  return (
+    <Surface>
+      <SectionTitle>Danger Zone</SectionTitle>
+      <p className="mt-1 text-[12px] text-[var(--muted)]">
+        These actions are irreversible. Use them to reset your account to a clean state, e.g. after testing with demo data.
+      </p>
+      <div className="mt-4 flex items-center justify-between rounded-md border border-[var(--red)]/30 bg-[var(--red)]/5 p-4">
+        <div>
+          <p className="text-[13px] font-semibold text-[var(--ink)]">Clear all trades &amp; import history</p>
+          <p className="mt-0.5 text-[12px] text-[var(--muted)]">
+            Permanently deletes every trade, rule break, review, and import batch. Opportunities and settings are kept.
+          </p>
+        </div>
+        {confirm ? (
+          <div className="ml-4 flex shrink-0 items-center gap-2">
+            <button onClick={() => setConfirm(false)} className="h-8 rounded-md border border-[var(--line)] px-3 text-[12px] font-medium">
+              Cancel
+            </button>
+            <button
+              onClick={handleClear}
+              disabled={pending}
+              className="flex h-8 items-center gap-1.5 rounded-md bg-[var(--red)] px-4 text-[12px] font-semibold text-white disabled:opacity-50"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              {pending ? "Clearing…" : "Yes, delete all"}
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={handleClear}
+            className="ml-4 shrink-0 h-8 rounded-md border border-[var(--red)]/40 px-3 text-[12px] font-semibold text-[var(--red)] hover:bg-[var(--red)]/10"
+          >
+            Clear All Trades
+          </button>
+        )}
+      </div>
+    </Surface>
   );
 }
 

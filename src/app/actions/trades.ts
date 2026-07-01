@@ -106,34 +106,49 @@ export async function getTrade(id: string) {
   });
 }
 
-export async function updateTrade(id: string, input: Partial<z.infer<typeof createTradeSchema>>) {
+export async function updateTrade(
+  id: string,
+  input: Partial<z.infer<typeof createTradeSchema>> & {
+    ruleBreaksToAdd?: { rule: string; severity: number }[];
+    ruleBreakIdsToRemove?: string[];
+  }
+) {
   const userId = await requireUser();
   const existing = await prisma.trade.findFirst({ where: { id, userId } });
   if (!existing) throw new Error("Not found");
 
-  const trade = await prisma.trade.update({
-    where: { id },
-    data: {
-      ...(input.ticker ? { ticker: input.ticker.toUpperCase() } : {}),
-      ...(input.direction ? { direction: input.direction } : {}),
-      ...(input.sessionName ? { sessionName: input.sessionName } : {}),
-      ...(input.quantity !== undefined ? { quantity: input.quantity } : {}),
-      ...(input.entryPrice !== undefined ? { entryPrice: input.entryPrice } : {}),
-      ...(input.exitPrice !== undefined ? { exitPrice: input.exitPrice } : {}),
-      ...(input.rMultiple !== undefined ? { rMultiple: input.rMultiple } : {}),
-      ...(input.pnl !== undefined ? { pnl: input.pnl } : {}),
-      ...(input.fees !== undefined ? { fees: input.fees } : {}),
-      ...(input.openedAt ? { openedAt: input.openedAt } : {}),
-      ...(input.closedAt ? { closedAt: input.closedAt } : {}),
-      ...(input.status ? { status: input.status } : {}),
-      ...(input.notes !== undefined ? { notes: input.notes } : {}),
-    },
+  const { ruleBreaksToAdd, ruleBreakIdsToRemove, ...fields } = input;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.trade.update({
+      where: { id },
+      data: {
+        ...(fields.ticker ? { ticker: fields.ticker.toUpperCase() } : {}),
+        ...(fields.direction ? { direction: fields.direction } : {}),
+        ...(fields.sessionName ? { sessionName: fields.sessionName } : {}),
+        ...(fields.quantity !== undefined ? { quantity: fields.quantity } : {}),
+        ...(fields.entryPrice !== undefined ? { entryPrice: fields.entryPrice } : {}),
+        ...(fields.exitPrice !== undefined ? { exitPrice: fields.exitPrice } : {}),
+        ...(fields.rMultiple !== undefined ? { rMultiple: fields.rMultiple } : {}),
+        ...(fields.pnl !== undefined ? { pnl: fields.pnl } : {}),
+        ...(fields.fees !== undefined ? { fees: fields.fees } : {}),
+        ...(fields.openedAt ? { openedAt: fields.openedAt } : {}),
+        ...(fields.closedAt ? { closedAt: fields.closedAt } : {}),
+        ...(fields.status ? { status: fields.status } : {}),
+        ...(fields.notes !== undefined ? { notes: fields.notes } : {}),
+      },
+    });
+    if (ruleBreakIdsToRemove?.length) {
+      await tx.ruleBreak.deleteMany({ where: { id: { in: ruleBreakIdsToRemove }, tradeId: id } });
+    }
+    if (ruleBreaksToAdd?.length) {
+      await tx.ruleBreak.createMany({ data: ruleBreaksToAdd.map((rb) => ({ ...rb, tradeId: id })) });
+    }
   });
 
   revalidatePath("/journal");
   revalidatePath("/analytics");
   revalidatePath("/");
-  return trade;
 }
 
 export async function deleteTrade(id: string) {
@@ -144,12 +159,74 @@ export async function deleteTrade(id: string) {
   revalidatePath("/");
 }
 
-export async function bulkCreateTrades(trades: z.input<typeof createTradeSchema>[]) {
+export async function clearAllTrades() {
+  const userId = await requireUser();
+  await prisma.$transaction([
+    prisma.trade.deleteMany({ where: { userId } }),
+    prisma.importBatch.deleteMany({ where: { userId } }),
+  ]);
+  revalidatePath("/journal");
+  revalidatePath("/analytics");
+  revalidatePath("/import");
+  revalidatePath("/");
+}
+
+export async function checkImportDuplicates(
+  candidates: { ticker: string; direction: "LONG" | "SHORT"; openedAt: string; entryPrice: number }[]
+): Promise<boolean[]> {
+  const userId = await requireUser();
+  const results: boolean[] = [];
+
+  for (const c of candidates) {
+    const openedAt = new Date(c.openedAt);
+    const existing = await prisma.trade.findFirst({
+      where: {
+        userId,
+        ticker: c.ticker.toUpperCase(),
+        direction: c.direction,
+        openedAt: {
+          gte: new Date(openedAt.getTime() - 60_000),
+          lte: new Date(openedAt.getTime() + 60_000),
+        },
+        entryPrice: {
+          gte: c.entryPrice * 0.9999 - 0.001,
+          lte: c.entryPrice * 1.0001 + 0.001,
+        },
+      },
+      select: { id: true },
+    });
+    results.push(!!existing);
+  }
+
+  return results;
+}
+
+export async function bulkCreateTrades(trades: z.input<typeof createTradeSchema>[], fileName?: string) {
   const userId = await requireUser();
   const results = [];
+  let skipped = 0;
 
   for (const input of trades) {
     const data = createTradeSchema.parse(input);
+    // Server-side dedup safety net — same key as checkImportDuplicates
+    const duplicate = await prisma.trade.findFirst({
+      where: {
+        userId,
+        ticker: data.ticker.toUpperCase(),
+        direction: data.direction,
+        openedAt: {
+          gte: new Date(data.openedAt.getTime() - 60_000),
+          lte: new Date(data.openedAt.getTime() + 60_000),
+        },
+        entryPrice: {
+          gte: Number(data.entryPrice) * 0.9999 - 0.001,
+          lte: Number(data.entryPrice) * 1.0001 + 0.001,
+        },
+      },
+      select: { id: true },
+    });
+    if (duplicate) { skipped++; continue; }
+
     const trade = await prisma.trade.create({
       data: {
         userId,
@@ -175,11 +252,11 @@ export async function bulkCreateTrades(trades: z.input<typeof createTradeSchema>
   const batch = await prisma.importBatch.create({
     data: {
       userId,
-      fileName: "metatrader-import",
+      fileName: fileName ?? "import",
       fileType: "metatrader",
       rowCount: trades.length,
       validRows: results.length,
-      errorRows: trades.length - results.length,
+      errorRows: skipped,
       mapping: {},
     },
   });
@@ -188,7 +265,7 @@ export async function bulkCreateTrades(trades: z.input<typeof createTradeSchema>
   revalidatePath("/analytics");
   revalidatePath("/import");
   revalidatePath("/");
-  return { trades: results, batch };
+  return { trades: results, skipped, batch };
 }
 
 export async function getTradeStats() {
