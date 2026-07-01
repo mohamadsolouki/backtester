@@ -74,9 +74,20 @@ body {
     background-size: 22px 22px;
 }
 
+/* Persian/Arabic locales: Vazirmatn becomes the primary face (not just a
+   fallback) so mixed Latin punctuation/digits inside Persian sentences
+   render with the matching glyph set instead of visibly swapping fonts. */
+body:lang(fa),
+body:lang(ar) {
+    font-family:
+        var(--font-sans-persian-arabic), var(--font-sans-base), "Segoe UI",
+        sans-serif;
+}
+
 :lang(fa),
 :lang(ar) {
-    --font-display: var(--font-sans-persian-arabic);
+    --font-display: var(--font-sans-persian-arabic), var(--font-sans-base);
+    --font-sans: var(--font-sans-persian-arabic), var(--font-sans-base);
 }
 
 button,

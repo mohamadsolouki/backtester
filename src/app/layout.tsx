@@ -7,7 +7,12 @@ import { prisma } from "@/lib/prisma";
 import { AuthSessionProvider } from "@/components/layout/session-provider";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { I18nProvider } from "@/components/layout/i18n-provider";
-import { defaultLocale, getLocaleDirection, isLocale, localeCookieName } from "@/lib/i18n";
+import {
+  defaultLocale,
+  getLocaleDirection,
+  isLocale,
+  localeCookieName,
+} from "@/lib/i18n";
 import "./globals.css";
 
 const notoSans = Noto_Sans({
@@ -17,7 +22,7 @@ const notoSans = Noto_Sans({
 
 const vazirmatn = Vazirmatn({
   variable: "--font-sans-persian-arabic",
-  subsets: ["arabic"],
+  subsets: ["arabic", "latin"],
 });
 
 const geistMono = Geist_Mono({
@@ -41,7 +46,10 @@ export default async function RootLayout({
   const locale = isLocale(cookieLocale) ? cookieLocale : defaultLocale;
   const dir = getLocaleDirection(locale);
   const settings = session?.user?.id
-    ? await prisma.userSettings.findUnique({ where: { userId: session.user.id }, select: { theme: true } })
+    ? await prisma.userSettings.findUnique({
+        where: { userId: session.user.id },
+        select: { theme: true },
+      })
     : null;
 
   return (
@@ -51,7 +59,10 @@ export default async function RootLayout({
       suppressHydrationWarning
       className={`${notoSans.variable} ${vazirmatn.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body dir={dir} className="min-h-full bg-background text-foreground antialiased">
+      <body
+        dir={dir}
+        className="min-h-full bg-background text-foreground antialiased"
+      >
         <ThemeProvider defaultTheme={settings?.theme ?? "light"}>
           <I18nProvider initialLocale={locale}>
             <AuthSessionProvider>{children}</AuthSessionProvider>
