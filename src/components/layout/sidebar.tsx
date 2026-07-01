@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "./i18n-provider";
 
 type NavItem = {
   label: string;
@@ -71,6 +72,7 @@ export function Sidebar({
   setMobileOpen: (open: boolean) => void;
 }) {
   const pathname = usePathname();
+  const { t } = useI18n();
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
@@ -99,14 +101,14 @@ export function Sidebar({
         <button
           className="fixed inset-0 z-30 bg-black/40 min-[981px]:hidden"
           onClick={() => setMobileOpen(false)}
-          aria-label="Close navigation"
+          aria-label={t("Close navigation")}
         />
       )}
       <aside
         className={cn(
-          "relative z-40 flex min-h-screen flex-col overflow-hidden border-r border-white/8 bg-[var(--nav)] text-white transition-[width] max-[980px]:fixed max-[980px]:inset-y-0 max-[980px]:left-0 max-[980px]:w-[240px] max-[980px]:transition-transform",
+          "relative z-40 flex min-h-screen flex-col overflow-hidden border-e border-white/8 bg-[var(--nav)] text-white transition-[width] max-[980px]:fixed max-[980px]:inset-y-0 max-[980px]:start-0 max-[980px]:w-[240px] max-[980px]:transition-transform",
           collapsed ? "w-[72px]" : "w-[188px]"
-        , !mobileOpen && "max-[980px]:-translate-x-full")}
+        , !mobileOpen && "max-[980px]:-translate-x-full rtl:max-[980px]:translate-x-full")}
       >
         <div
           className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full opacity-[0.14] blur-3xl"
@@ -128,14 +130,14 @@ export function Sidebar({
               <X className="h-4 w-4" />
             </button>
           </div>
-          {!collapsed && <div className="eyebrow mt-2 text-white/35">Trading Intelligence</div>}
+          {!collapsed && <div className="eyebrow mt-2 text-white/35">{t("Trading Intelligence")}</div>}
         </div>
         <nav className="relative flex-1 space-y-4 overflow-y-auto px-2 py-3 thin-scrollbar">
           {navGroups.map((group) => (
             <div key={group.label}>
               {!collapsed && (
                 <div className="eyebrow px-3 pb-1.5 text-white/30">
-                  {group.label}
+                  {t(group.label)}
                 </div>
               )}
               <div className="space-y-0.5">
@@ -147,19 +149,19 @@ export function Sidebar({
                       key={item.label}
                       href={item.href}
                       onClick={() => setMobileOpen(false)}
-                      title={collapsed ? item.label : undefined}
+                      title={collapsed ? t(item.label) : undefined}
                       className={cn(
-                        "relative flex h-10 w-full items-center gap-3 rounded-md px-3 text-left text-[13.5px] font-medium text-white/70 transition-all",
+                        "relative flex h-10 w-full items-center gap-3 rounded-md px-3 text-start text-[13.5px] font-medium text-white/70 transition-all",
                         active
                           ? "bg-white/[0.07] text-[var(--teal-dark)]"
                           : "hover:bg-white/5 hover:text-white"
                       )}
                     >
                       {active && (
-                        <span className="absolute left-0 top-1/2 h-5 w-[2.5px] -translate-y-1/2 rounded-full bg-[var(--teal-dark)]" />
+                        <span className="absolute start-0 top-1/2 h-5 w-[2.5px] -translate-y-1/2 rounded-full bg-[var(--teal-dark)]" />
                       )}
                       <Icon className="h-4 w-4 shrink-0" />
-                      {!collapsed && item.label}
+                      {!collapsed && t(item.label)}
                     </Link>
                   );
                 })}
@@ -171,8 +173,8 @@ export function Sidebar({
           onClick={toggleCollapsed}
           className="relative m-2 hidden h-9 items-center justify-center gap-2 rounded-md border border-white/8 text-[12px] text-white/50 transition-colors hover:border-white/16 hover:bg-white/5 hover:text-white min-[981px]:flex"
         >
-          {collapsed ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
-          {!collapsed && "Collapse"}
+          {collapsed ? <ChevronsRight className="h-4 w-4 rtl:-scale-x-100" /> : <ChevronsLeft className="h-4 w-4 rtl:-scale-x-100" />}
+          {!collapsed && t("Collapse")}
         </button>
       </aside>
     </>

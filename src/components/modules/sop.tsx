@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { Surface, SectionTitle, ModuleShell, ActionButton, TextField, EmptyState, Checkbox } from "@/components/ui";
 import { createSopDocument, publishSopVersion } from "@/app/actions/sop";
+import { useI18n } from "@/components/layout/i18n-provider";
 
 type SopGroup = { title: string; items: { label: string; checked: boolean }[] };
 
@@ -44,6 +45,7 @@ const defaultGroups: SopGroup[] = [
 ];
 
 export function SopView({ documents }: { documents: SerializedDoc[] }) {
+  const { t } = useI18n();
   const [pending, startTransition] = useTransition();
   const [showCreate, setShowCreate] = useState(false);
   const [title, setTitle] = useState("Daily Trading SOP");
@@ -62,7 +64,7 @@ export function SopView({ documents }: { documents: SerializedDoc[] }) {
   function handleCreate() {
     startTransition(async () => {
       await createSopDocument(title, { groups });
-      toast.success("SOP created");
+      toast.success(t("SOP created"));
       setShowCreate(false);
     });
   }
@@ -72,43 +74,43 @@ export function SopView({ documents }: { documents: SerializedDoc[] }) {
 
   return (
     <ModuleShell
-      title="Routine"
-      eyebrow="Execute"
-      description="Versioned standard operating procedures for daily trading discipline."
-      actions={documents.length === 0 ? <ActionButton icon={Plus} onClick={() => setShowCreate(true)}>Create SOP</ActionButton> : undefined}
+      title={t("Routine")}
+      eyebrow={t("Execute")}
+      description={t("Versioned standard operating procedures for daily trading discipline.")}
+      actions={documents.length === 0 ? <ActionButton icon={Plus} onClick={() => setShowCreate(true)}>{t("Create SOP")}</ActionButton> : undefined}
     >
       {documents.length === 0 && !showCreate && (
         <EmptyState
-          title="No SOP yet"
-          description="Create your first standard operating procedure checklist."
-          action={<ActionButton icon={Plus} onClick={() => setShowCreate(true)}>Create SOP</ActionButton>}
+          title={t("No SOP yet")}
+          description={t("Create your first standard operating procedure checklist.")}
+          action={<ActionButton icon={Plus} onClick={() => setShowCreate(true)}>{t("Create SOP")}</ActionButton>}
         />
       )}
 
       {(showCreate || documents.length === 0) && (
         <Surface>
-          <SectionTitle>{documents.length === 0 ? "Create SOP" : "New SOP"}</SectionTitle>
+          <SectionTitle>{documents.length === 0 ? t("Create SOP") : t("New SOP")}</SectionTitle>
           <div className="mt-3">
-            <TextField label="Title" value={title} onChange={setTitle} />
+            <TextField label={t("Title")} value={title} onChange={setTitle} />
           </div>
           <div className="mt-4 grid grid-cols-3 gap-3 max-[768px]:grid-cols-1">
             {groups.map((group, gi) => (
               <div key={group.title} className="rounded-md border border-[var(--line)] p-3">
-                <div className="text-[12px] font-semibold uppercase">{group.title}</div>
+                <div className="text-[12px] font-semibold uppercase">{t(group.title)}</div>
                 <div className="mt-2 space-y-2">
                   {group.items.map((item, ii) => (
-                    <button key={item.label} onClick={() => toggleItem(gi, ii)} className="flex w-full items-center gap-2 text-left text-[12px]">
+                    <button key={item.label} onClick={() => toggleItem(gi, ii)} className="flex w-full items-center gap-2 text-start text-[12px]">
                       <Checkbox checked={item.checked} />
-                      {item.label}
+                      {t(item.label)}
                     </button>
                   ))}
                 </div>
               </div>
             ))}
           </div>
-          <div className="mt-2 text-[12px] text-[var(--muted)]">{totalChecked} / {totalItems} completed today</div>
+          <div className="mt-2 text-[12px] text-[var(--muted)]">{totalChecked} / {totalItems} {t("completed today")}</div>
           <button onClick={handleCreate} disabled={pending} className="mt-4 h-9 w-full rounded-md bg-[var(--teal)] text-[12px] font-semibold text-white disabled:opacity-50">
-            {pending ? "Saving..." : "Save SOP"}
+            {pending ? t("Saving...") : t("Save SOP")}
           </button>
         </Surface>
       )}
@@ -121,6 +123,7 @@ export function SopView({ documents }: { documents: SerializedDoc[] }) {
 }
 
 function SopDocumentCard({ doc }: { doc: SerializedDoc }) {
+  const { t } = useI18n();
   const [pending, startTransition] = useTransition();
   const initialGroups = ((doc.versions[0]?.content as { groups?: SopGroup[] })?.groups) ?? [];
   const [groups, setGroups] = useState<SopGroup[]>(initialGroups);
@@ -139,10 +142,10 @@ function SopDocumentCard({ doc }: { doc: SerializedDoc }) {
   }
 
   function publish() {
-    if (!changeLog) { toast.error("Add a changelog describing what changed"); return; }
+    if (!changeLog) { toast.error(t("Add a changelog describing what changed")); return; }
     startTransition(async () => {
       await publishSopVersion(doc.id, { groups }, changeLog);
-      toast.success("SOP version published");
+      toast.success(t("SOP version published"));
       setDirty(false);
       setChangeLog("");
     });
@@ -156,18 +159,18 @@ function SopDocumentCard({ doc }: { doc: SerializedDoc }) {
       <div className="flex items-center justify-between">
         <SectionTitle>{doc.title}</SectionTitle>
         <span className="num text-[12px] font-semibold text-[var(--teal-dark)]">
-          v{doc.versions[0]?.version ?? "1.0.0"} · {totalChecked}/{totalItems} today
+          v{doc.versions[0]?.version ?? "1.0.0"} · {totalChecked}/{totalItems} {t("today")}
         </span>
       </div>
       <div className="mt-3 grid grid-cols-3 gap-3 max-[768px]:grid-cols-1">
         {groups.map((group, gi) => (
           <div key={group.title} className="rounded-md border border-[var(--line)] p-3">
-            <div className="text-[12px] font-semibold uppercase">{group.title}</div>
+            <div className="text-[12px] font-semibold uppercase">{t(group.title)}</div>
             <div className="mt-2 space-y-2">
               {group.items.map((item, ii) => (
-                <button key={item.label} onClick={() => toggleItem(gi, ii)} className="flex w-full items-center gap-2 text-left text-[12px]">
+                <button key={item.label} onClick={() => toggleItem(gi, ii)} className="flex w-full items-center gap-2 text-start text-[12px]">
                   <Checkbox checked={item.checked} />
-                  {item.label}
+                  {t(item.label)}
                 </button>
               ))}
             </div>
@@ -176,7 +179,7 @@ function SopDocumentCard({ doc }: { doc: SerializedDoc }) {
       </div>
       {doc.versions[0]?.changeLog && (
         <div className="mt-3 rounded-md bg-[var(--panel-soft)] p-3 text-[12px] text-[var(--ink)]">
-          <span className="font-semibold">Latest changelog: </span>{doc.versions[0].changeLog}
+          <span className="font-semibold">{t("Latest changelog:")} </span>{doc.versions[0].changeLog}
         </div>
       )}
       {dirty && (
@@ -184,7 +187,7 @@ function SopDocumentCard({ doc }: { doc: SerializedDoc }) {
           <input
             value={changeLog}
             onChange={(e) => setChangeLog(e.target.value)}
-            placeholder="What changed in this version?"
+            placeholder={t("What changed in this version?")}
             className="h-9 flex-1 rounded-md border border-[var(--line)] bg-[var(--panel)] px-3 text-[12px] text-[var(--ink)] outline-none focus:border-[var(--teal)]"
           />
           <button
@@ -192,7 +195,7 @@ function SopDocumentCard({ doc }: { doc: SerializedDoc }) {
             disabled={pending}
             className="h-9 shrink-0 rounded-md bg-[var(--teal)] px-4 text-[12px] font-semibold text-white disabled:opacity-50"
           >
-            {pending ? "Publishing..." : "Publish New Version"}
+            {pending ? t("Publishing...") : t("Publish New Version")}
           </button>
         </div>
       )}

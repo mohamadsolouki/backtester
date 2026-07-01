@@ -10,6 +10,8 @@ import { HelpTip } from "@/components/ui/help-tip";
 import { helpTips } from "@/lib/help-content";
 import { cn } from "@/lib/utils";
 import { createOpportunity, updateOpportunityStatus, toggleContextTag, updateEntry, deleteOpportunity } from "@/app/actions/opportunities";
+import { useI18n } from "@/components/layout/i18n-provider";
+import { sessionNameFromDbValue } from "@/lib/date-range";
 
 const BIAS_OPTIONS = ["Bullish", "Bearish", "Neutral"] as const;
 
@@ -46,6 +48,7 @@ export function OpportunitiesView({
   setupOptions: string[];
   primaryContextOptions: string[];
 }) {
+  const { t } = useI18n();
   const [filter, setFilter] = useState<StatusFilter>("All");
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(opportunities[0]?.id ?? null);
@@ -61,11 +64,11 @@ export function OpportunitiesView({
 
   return (
     <ModuleShell
-      title="Watchlist"
-      eyebrow="Plan"
-      description="Plan, grade, and track trading opportunities before they become trades."
+      title={t("Watchlist")}
+      eyebrow={t("Plan")}
+      description={t("Plan, grade, and track trading opportunities before they become trades.")}
       actions={
-        <ActionButton icon={Plus} onClick={() => setShowForm(true)}>New Opportunity</ActionButton>
+        <ActionButton icon={Plus} onClick={() => setShowForm(true)}>{t("New Opportunity")}</ActionButton>
       }
     >
       {showForm && (
@@ -89,26 +92,26 @@ export function OpportunitiesView({
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search..."
-                className="h-8 w-full rounded-md border border-[var(--line)] bg-[var(--panel)] pl-3 pr-3 text-[13px] outline-none focus:border-[var(--teal)]"
+                placeholder={t("Search...")}
+                className="h-8 w-full rounded-md border border-[var(--line)] bg-[var(--panel)] px-3 text-[13px] outline-none focus:border-[var(--teal)]"
               />
             </label>
           </div>
           {filtered.length === 0 ? (
-            <EmptyState title="No opportunities" description="Create one to start tracking your trading ideas." />
+            <EmptyState title={t("No opportunities")} description={t("Create one to start tracking your trading ideas.")} />
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[600px] text-left text-[12px]">
+              <table className="w-full min-w-[600px] text-start text-[12px]">
                 <thead className="border-y border-[var(--line)] text-[var(--muted)]">
                   <tr>
                     {(["Ticker", "Setup", "Bias", "Session", "Status"] as const).map((h) => (
-                      <th key={h} className="h-9 px-2 font-semibold">{h}</th>
+                      <th key={h} className="h-9 px-2 font-semibold">{t(h)}</th>
                     ))}
                     <th className="h-9 px-2 font-semibold">
-                      <span className="inline-flex items-center gap-1">Conf <HelpTip content={helpTips.confirmationCount} /></span>
+                      <span className="inline-flex items-center gap-1">{t("Conf")} <HelpTip content={t(helpTips.confirmationCount)} /></span>
                     </th>
                     <th className="h-9 px-2 font-semibold">
-                      <span className="inline-flex items-center gap-1">Grade <HelpTip content={helpTips.grade} /></span>
+                      <span className="inline-flex items-center gap-1">{t("Grade")} <HelpTip content={t(helpTips.grade)} /></span>
                     </th>
                   </tr>
                 </thead>
@@ -124,8 +127,8 @@ export function OpportunitiesView({
                     >
                       <td className="h-10 px-2 font-semibold">{o.ticker}</td>
                       <td className="px-2">{o.setupName}</td>
-                      <td className="px-2">{o.bias}</td>
-                      <td className="px-2 text-[var(--muted)]">{o.sessionName.replace(/_/g, " ")}</td>
+                      <td className="px-2">{t(o.bias)}</td>
+                      <td className="px-2 text-[var(--muted)]">{t(sessionNameFromDbValue(o.sessionName))}</td>
                       <td className="px-2"><StatusPill status={o.status} /></td>
                       <td className="num px-2">{o.confirmationCount}</td>
                       <td className="px-2"><GradeBadge grade={o.grade ?? "F"} /></td>
@@ -154,6 +157,7 @@ function NewOpportunityForm({
   setupOptions: string[];
   primaryContextOptions: string[];
 }) {
+  const { t } = useI18n();
   const [pending, startTransition] = useTransition();
   const [ticker, setTicker] = useState("");
   const [setup, setSetup] = useState("");
@@ -162,12 +166,12 @@ function NewOpportunityForm({
   const [session, setSession] = useState<SessionName>("OPEN");
 
   function handleSubmit() {
-    if (!ticker || !setup || !bias) { toast.error("Fill required fields"); return; }
+    if (!ticker || !setup || !bias) { toast.error(t("Fill required fields")); return; }
     startTransition(async () => {
       await createOpportunity({
         ticker, setupName: setup, bias, primaryContext: context, sessionName: session,
       });
-      toast.success("Opportunity created");
+      toast.success(t("Opportunity created"));
       onClose();
     });
   }
@@ -175,53 +179,53 @@ function NewOpportunityForm({
   return (
     <Surface>
       <div className="flex items-center justify-between">
-        <SectionTitle>New Opportunity</SectionTitle>
-        <button onClick={onClose} className="text-[12px] text-[var(--muted)]">Cancel</button>
+        <SectionTitle>{t("New Opportunity")}</SectionTitle>
+        <button onClick={onClose} className="text-[12px] text-[var(--muted)]">{t("Cancel")}</button>
       </div>
       <div className="mt-3 grid grid-cols-3 gap-3 max-[768px]:grid-cols-1">
-        <Combobox label="Ticker" value={ticker} onChange={setTicker} options={tickerOptions} required placeholder="NQ" />
+        <Combobox label={t("Ticker")} value={ticker} onChange={setTicker} options={tickerOptions} required placeholder="NQ" />
         <Combobox
-          label={<span className="inline-flex items-center gap-1">Setup <HelpTip content={helpTips.setupName} /></span>}
+          label={<span className="inline-flex items-center gap-1">{t("Setup")} <HelpTip content={t(helpTips.setupName)} /></span>}
           value={setup}
           onChange={setSetup}
           options={setupOptions}
           required
-          placeholder="Momentum Break"
+          placeholder={t("Momentum Break")}
         />
         <label>
-          <span className="text-[12px] text-[var(--muted)]">Session</span>
+          <span className="text-[12px] text-[var(--muted)]">{t("Session")}</span>
           <select value={session} onChange={(e) => setSession(e.target.value as SessionName)} className="mt-1 h-9 w-full rounded-md border border-[var(--line)] bg-[var(--panel)] px-3">
             {["PRE_MARKET", "OPEN", "MIDDAY", "CLOSE", "POST_MARKET"].map((s) => (
-              <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
+              <option key={s} value={s}>{t(sessionNameFromDbValue(s))}</option>
             ))}
           </select>
         </label>
         <label>
-          <span className="text-[12px] text-[var(--muted)]">Bias</span>
+          <span className="text-[12px] text-[var(--muted)]">{t("Bias")}</span>
           <select
             value={bias}
             onChange={(e) => setBias(e.target.value as (typeof BIAS_OPTIONS)[number])}
             className="mt-1 h-9 w-full rounded-md border border-[var(--line)] bg-[var(--panel)] px-3"
           >
             {BIAS_OPTIONS.map((b) => (
-              <option key={b} value={b}>{b}</option>
+              <option key={b} value={b}>{t(b)}</option>
             ))}
           </select>
         </label>
         <div className="col-span-2 max-[768px]:col-span-1">
           <Combobox
-            label={<span className="inline-flex items-center gap-1">Primary Context <HelpTip content={helpTips.primaryContext} /></span>}
+            label={<span className="inline-flex items-center gap-1">{t("Primary Context")} <HelpTip content={t(helpTips.primaryContext)} /></span>}
             value={context}
             onChange={setContext}
             options={primaryContextOptions}
-            placeholder="Trend continuation above 20 EMA"
+            placeholder={t("Trend continuation above 20 EMA")}
           />
         </div>
       </div>
       <div className="mt-4 flex justify-end gap-2">
-        <button onClick={onClose} className="h-9 rounded-md border border-[var(--line)] px-4 text-[12px] font-semibold">Cancel</button>
+        <button onClick={onClose} className="h-9 rounded-md border border-[var(--line)] px-4 text-[12px] font-semibold">{t("Cancel")}</button>
         <button onClick={handleSubmit} disabled={pending} className="h-9 rounded-md bg-[var(--teal)] px-6 text-[12px] font-semibold text-white disabled:opacity-50">
-          {pending ? "Creating..." : "Create"}
+          {pending ? t("Creating...") : t("Create")}
         </button>
       </div>
     </Surface>
@@ -231,13 +235,14 @@ function NewOpportunityForm({
 type DetailTab = "overview" | "context" | "entries";
 
 function OpportunityDetail({ opp }: { opp: SerializedOpp }) {
+  const { t } = useI18n();
   const [tab, setTab] = useState<DetailTab>("overview");
   const [pending, startTransition] = useTransition();
 
   function setStatus(status: OpportunityStatus) {
     startTransition(async () => {
       await updateOpportunityStatus(opp.id, status);
-      toast.success(`Marked as ${status}`);
+      toast.success(`${t("Marked as")} ${t(status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()))}`);
     });
   }
 
@@ -254,16 +259,16 @@ function OpportunityDetail({ opp }: { opp: SerializedOpp }) {
   }
 
   function handleDelete() {
-    if (!confirm("Delete this opportunity?")) return;
+    if (!confirm(t("Delete this opportunity?"))) return;
     startTransition(async () => {
       await deleteOpportunity(opp.id);
-      toast.success("Deleted");
+      toast.success(t("Deleted"));
     });
   }
 
   const tabs: { id: DetailTab; label: string }[] = [
     { id: "overview", label: "Overview" },
-    { id: "context", label: `Context (${opp.confirmationCount})` },
+    { id: "context", label: `${t("Context")} (${opp.confirmationCount})` },
     { id: "entries", label: "Entries" },
   ];
 
@@ -279,18 +284,18 @@ function OpportunityDetail({ opp }: { opp: SerializedOpp }) {
         </div>
 
         <div className="mt-3 flex gap-0.5 border-b border-[var(--line)]">
-          {tabs.map((t) => (
+          {tabs.map((tabItem) => (
             <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
+              key={tabItem.id}
+              onClick={() => setTab(tabItem.id)}
               className={cn(
                 "px-3 py-2 text-[12px] font-medium transition-colors",
-                tab === t.id
+                tab === tabItem.id
                   ? "border-b-2 border-[var(--teal)] text-[var(--teal-dark)]"
                   : "text-[var(--muted)] hover:text-[var(--ink)]"
               )}
             >
-              {t.label}
+              {tabItem.id === "context" ? tabItem.label : t(tabItem.label)}
             </button>
           ))}
         </div>
@@ -298,26 +303,26 @@ function OpportunityDetail({ opp }: { opp: SerializedOpp }) {
         {tab === "overview" && (
           <div className="mt-3">
             <div className="space-y-2 text-[13px]">
-              <div className="flex justify-between"><span className="text-[var(--muted)]">Bias</span><span className="font-medium">{opp.bias}</span></div>
-              <div className="flex justify-between"><span className="text-[var(--muted)]">Session</span><span>{opp.sessionName.replace(/_/g, " ")}</span></div>
-              <div className="flex justify-between"><span className="text-[var(--muted)]">Confirmations</span><span className="num font-semibold">{opp.confirmationCount} / {opp.contextTags.length}</span></div>
-              <div className="flex justify-between"><span className="text-[var(--muted)]">Status</span><StatusPill status={opp.status} /></div>
+              <div className="flex justify-between"><span className="text-[var(--muted)]">{t("Bias")}</span><span className="font-medium">{t(opp.bias)}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--muted)]">{t("Session")}</span><span>{t(sessionNameFromDbValue(opp.sessionName))}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--muted)]">{t("Confirmations")}</span><span className="num font-semibold">{opp.confirmationCount} / {opp.contextTags.length}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--muted)]">{t("Status")}</span><StatusPill status={opp.status} /></div>
             </div>
             {opp.notes && <p className="mt-3 rounded-md bg-[var(--panel-soft)] p-3 text-[12px] text-[var(--ink)]">{opp.notes}</p>}
             <div className="mt-4 grid grid-cols-3 gap-2">
-              <button onClick={() => setStatus("TAKEN")} disabled={pending} className="h-9 rounded-md bg-[var(--teal)] text-[12px] font-semibold text-white disabled:opacity-50">Taken</button>
-              <button onClick={() => setStatus("SKIPPED")} disabled={pending} className="h-9 rounded-md bg-[var(--amber)] text-[12px] font-semibold text-white disabled:opacity-50">Skipped</button>
-              <button onClick={() => setStatus("NOT_FORMED")} disabled={pending} className="h-9 rounded-md bg-[var(--muted)] text-[12px] font-semibold text-white disabled:opacity-50">Not Formed</button>
+              <button onClick={() => setStatus("TAKEN")} disabled={pending} className="h-9 rounded-md bg-[var(--teal)] text-[12px] font-semibold text-white disabled:opacity-50">{t("Taken")}</button>
+              <button onClick={() => setStatus("SKIPPED")} disabled={pending} className="h-9 rounded-md bg-[var(--amber)] text-[12px] font-semibold text-white disabled:opacity-50">{t("Skipped")}</button>
+              <button onClick={() => setStatus("NOT_FORMED")} disabled={pending} className="h-9 rounded-md bg-[var(--muted)] text-[12px] font-semibold text-white disabled:opacity-50">{t("Not Formed")}</button>
             </div>
-            <button onClick={handleDelete} disabled={pending} className="mt-2 w-full text-center text-[12px] text-[var(--red)] hover:underline">Delete opportunity</button>
+            <button onClick={handleDelete} disabled={pending} className="mt-2 w-full text-center text-[12px] text-[var(--red)] hover:underline">{t("Delete opportunity")}</button>
           </div>
         )}
 
         {tab === "context" && (
           <div className="mt-3">
             <div className="mb-2 flex items-center justify-between">
-              <p className="text-[12px] text-[var(--muted)]">Toggle signals that are currently active in the market.</p>
-              <span className="num text-[12px] font-semibold text-[var(--teal-dark)]">{opp.confirmationCount}/{opp.contextTags.length} active</span>
+              <p className="text-[12px] text-[var(--muted)]">{t("Toggle signals that are currently active in the market.")}</p>
+              <span className="num text-[12px] font-semibold text-[var(--teal-dark)]">{opp.confirmationCount}/{opp.contextTags.length} {t("Active").toLowerCase()}</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {opp.contextTags.map((tag) => (
@@ -326,7 +331,7 @@ function OpportunityDetail({ opp }: { opp: SerializedOpp }) {
                   onClick={() => handleToggleTag(tag.id)}
                   disabled={pending}
                   className={cn(
-                    "rounded-md border p-3 text-left text-[12px] transition",
+                    "rounded-md border p-3 text-start text-[12px] transition",
                     tag.enabled
                       ? "border-[var(--teal)]/50 bg-[var(--panel-soft)]"
                       : "border-[var(--line)] hover:bg-[var(--panel-soft)]"
@@ -342,7 +347,7 @@ function OpportunityDetail({ opp }: { opp: SerializedOpp }) {
                     </span>
                   </div>
                   <p className="num mt-1 text-[var(--muted)]">
-                    Weight {tag.weight > 0 ? `+${tag.weight}` : tag.weight}
+                    {t("Weight")} {tag.weight > 0 ? `+${tag.weight}` : tag.weight}
                   </p>
                 </button>
               ))}
@@ -353,7 +358,7 @@ function OpportunityDetail({ opp }: { opp: SerializedOpp }) {
         {tab === "entries" && (
           <div className="mt-3 space-y-2">
             {opp.entries.length === 0 ? (
-              <p className="text-[13px] text-[var(--muted)]">No entry plan defined.</p>
+              <p className="text-[13px] text-[var(--muted)]">{t("No entry plan defined.")}</p>
             ) : (
               opp.entries.map((entry) => (
                 <div key={entry.id} className="flex items-center justify-between gap-2">
@@ -365,7 +370,7 @@ function OpportunityDetail({ opp }: { opp: SerializedOpp }) {
                     className="h-8 flex-1 rounded-md border border-[var(--line)] bg-[var(--panel)] px-2 text-[12px] text-[var(--ink)]"
                   >
                     {["WAITING", "TAKEN", "SKIPPED", "NOT_FORMED"].map((s) => (
-                      <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
+                      <option key={s} value={s}>{t(s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()))}</option>
                     ))}
                   </select>
                   <StatusPill status={entry.status} />

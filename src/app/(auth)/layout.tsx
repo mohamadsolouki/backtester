@@ -1,9 +1,13 @@
+"use client";
+
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
+import { useI18n } from "@/components/layout/i18n-provider";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
+  const { t } = useI18n();
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#061713] p-4">
-      <div className="absolute right-4 top-4 z-10">
+      <div className="absolute end-4 top-4 z-10">
         <LanguageSwitcher compact />
       </div>
       <div
@@ -21,7 +25,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <span className="font-display font-semibold text-[34px] tracking-[-0.01em] text-white">Trade</span>
             <span className="rounded-md bg-[#22c9bc]/15 px-2 py-0.5 font-mono text-[16px] font-bold text-[#5eead4]">OS</span>
           </h1>
-          <p className="eyebrow mt-2 text-white/40">Trading Intelligence Platform</p>
+          <p className="eyebrow mt-2 text-white/40">{t("Trading Intelligence Platform")}</p>
         </div>
         {children}
       </div>

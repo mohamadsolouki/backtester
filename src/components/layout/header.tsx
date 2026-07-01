@@ -18,6 +18,7 @@ import { updateUserSettings } from "@/app/actions/settings";
 import { cn } from "@/lib/utils";
 import { parseDateRangeSearchParams, type DateRangePreset, type ResolvedDateRange } from "@/lib/date-range";
 import { sessionNames, type SessionName } from "@/lib/domain";
+import { useI18n } from "@/components/layout/i18n-provider";
 
 const routeLabels: Record<string, string> = {
   "/": "Overview",
@@ -45,6 +46,7 @@ export function Header({
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
   const { resolvedTheme, setTheme } = useTheme();
+  const { t } = useI18n();
   const { preset, range, sessions: activeSessions } = parseDateRangeSearchParams(
     Object.fromEntries(searchParams.entries())
   );
@@ -99,12 +101,12 @@ export function Header({
       <button
         className="hidden rounded-md border border-white/12 p-2 text-white/70 max-[980px]:block"
         onClick={openMobileNav}
-        aria-label="Open navigation"
+        aria-label={t("Open navigation")}
       >
-        <PanelLeftClose className="h-4 w-4" />
+        <PanelLeftClose className="h-4 w-4 rtl:-scale-x-100" />
       </button>
       <div className="min-w-[146px]">
-        <div className="eyebrow text-white/45">{label}</div>
+        <div className="eyebrow text-white/45">{t(label)}</div>
         <DateRangePicker
           preset={preset}
           range={range}
@@ -113,7 +115,7 @@ export function Header({
       </div>
       <div className="h-8 w-px bg-white/10 max-[760px]:hidden" />
       <div className="min-w-[460px] flex-1 max-[760px]:min-w-full">
-        <div className="eyebrow text-white/45">Session</div>
+        <div className="eyebrow text-white/45">{t("Session")}</div>
         <div className="mt-1.5 flex h-8 gap-1">
           {sessionNames.map((item) => {
             const on = activeSessions.includes(item);
@@ -129,7 +131,7 @@ export function Header({
                 )}
               >
                 <span className={cn("h-[4px] w-[4px] shrink-0 rounded-full transition-colors", on ? "bg-[var(--teal-dark)]" : "bg-white/25")} />
-                {item}
+                {t(item)}
               </button>
             );
           })}
@@ -144,8 +146,8 @@ export function Header({
           updateUserSettings({ theme: next });
         }}
         className="rounded-full border border-white/12 p-2 text-white/74 transition-colors hover:border-white/24 hover:bg-white/8"
-        aria-label="Toggle theme"
-        title="Toggle theme"
+        aria-label={t("Toggle theme")}
+        title={t("Toggle theme")}
       >
         <Sun className="hidden h-4 w-4 dark:block" />
         <Moon className="block h-4 w-4 dark:hidden" />
@@ -154,8 +156,8 @@ export function Header({
       <button
         onClick={() => signOut({ callbackUrl: "/login" })}
         className="rounded-full border border-white/12 p-2 text-white/74 transition-colors hover:border-white/24 hover:bg-white/8"
-        aria-label="Sign out"
-        title="Sign out"
+        aria-label={t("Sign out")}
+        title={t("Sign out")}
       >
         <LogOut className="h-4 w-4" />
       </button>

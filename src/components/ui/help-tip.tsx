@@ -3,10 +3,12 @@
 import { useRef, useState, type ReactNode } from "react";
 import { HelpCircle } from "lucide-react";
 import { usePopover } from "@/lib/use-popover";
+import { useI18n } from "@/components/layout/i18n-provider";
 
 export function HelpTip({ content }: { content: ReactNode }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLSpanElement>(null);
+  const { t } = useI18n();
 
   usePopover(rootRef, open, () => setOpen(false));
 
@@ -15,7 +17,7 @@ export function HelpTip({ content }: { content: ReactNode }) {
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        aria-label="Help"
+        aria-label={t("Help")}
         className="text-[var(--muted)] hover:text-[var(--teal-dark)]"
       >
         <HelpCircle className="h-3.5 w-3.5" />

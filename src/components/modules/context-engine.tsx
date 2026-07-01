@@ -5,6 +5,7 @@ import { Check } from "lucide-react";
 import { Surface, SectionTitle, ModuleShell, GradeBadge, StatusPill, EmptyState } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { toggleContextTag } from "@/app/actions/opportunities";
+import { useI18n } from "@/components/layout/i18n-provider";
 
 type SerializedOpp = {
   id: string;
@@ -20,6 +21,7 @@ type SerializedOpp = {
 };
 
 export function ContextEngineView({ opportunities }: { opportunities: SerializedOpp[] }) {
+  const { t } = useI18n();
   const [selectedId, setSelectedId] = useState<string | null>(opportunities[0]?.id ?? null);
   const [pending, startTransition] = useTransition();
 
@@ -33,19 +35,19 @@ export function ContextEngineView({ opportunities }: { opportunities: Serialized
 
   if (opportunities.length === 0) {
     return (
-      <ModuleShell title="Context Engine" description="Tag independent context signals to auto-grade opportunities.">
-        <EmptyState title="No opportunities" description="Create an opportunity first, then use the Context Engine to grade it." />
+      <ModuleShell title={t("Context Engine")} description={t("Tag independent context signals to auto-grade opportunities.")}>
+        <EmptyState title={t("No opportunities")} description={t("Create an opportunity first, then use the Context Engine to grade it.")} />
       </ModuleShell>
     );
   }
 
   return (
-    <ModuleShell title="Context Engine" description="Tag independent context signals to auto-grade opportunities.">
+    <ModuleShell title={t("Context Engine")} description={t("Tag independent context signals to auto-grade opportunities.")}>
       <div className="grid grid-cols-[1fr_360px] gap-2 max-[1040px]:grid-cols-1">
         <div className="space-y-2">
           <Surface>
             <div className="mb-3 flex items-center justify-between">
-              <SectionTitle>Select Opportunity</SectionTitle>
+              <SectionTitle>{t("Select Opportunity")}</SectionTitle>
               {selected && <GradeBadge grade={selected.grade ?? "F"} />}
             </div>
             <div className="flex flex-wrap gap-2">
@@ -69,9 +71,9 @@ export function ContextEngineView({ opportunities }: { opportunities: Serialized
           {selected && (
             <Surface>
               <div className="flex items-center justify-between">
-                <SectionTitle>{selected.ticker} Context Tags</SectionTitle>
+                <SectionTitle>{selected.ticker} {t("Context Tags")}</SectionTitle>
                 <div className="text-[13px] font-semibold text-[#08746f]">
-                  {selected.confirmationCount} / 7 confirmations
+                  {selected.confirmationCount} / 7 {t("Confirmations").toLowerCase()}
                 </div>
               </div>
               <div className="mt-4 grid grid-cols-3 gap-2 max-[820px]:grid-cols-2 max-[560px]:grid-cols-1">
@@ -81,7 +83,7 @@ export function ContextEngineView({ opportunities }: { opportunities: Serialized
                     onClick={() => handleToggleTag(selected.id, tag.id)}
                     disabled={pending}
                     className={cn(
-                      "rounded-md border p-4 text-left transition",
+                      "rounded-md border p-4 text-start transition",
                       tag.enabled
                         ? "border-[#89ccc6] bg-[#effaf8]"
                         : "border-[#dbe2df] bg-white hover:bg-[#f5f7f4]"
@@ -101,7 +103,7 @@ export function ContextEngineView({ opportunities }: { opportunities: Serialized
                       </span>
                     </div>
                     <p className="mt-2 text-[12px] text-[#66746f]">
-                      Weight {tag.weight > 0 ? `+${tag.weight}` : tag.weight}
+                      {t("Weight")} {tag.weight > 0 ? `+${tag.weight}` : tag.weight}
                     </p>
                   </button>
                 ))}
@@ -113,7 +115,7 @@ export function ContextEngineView({ opportunities }: { opportunities: Serialized
         {selected && (
           <div className="space-y-2">
             <Surface>
-              <SectionTitle>Grade</SectionTitle>
+              <SectionTitle>{t("Grade")}</SectionTitle>
               <div className="mt-3 flex items-center gap-4">
                 <div className={cn("rounded border px-4 py-3 text-3xl font-semibold", (() => {
                   const g = selected.grade ?? "F";
@@ -124,24 +126,24 @@ export function ContextEngineView({ opportunities }: { opportunities: Serialized
                   {selected.grade ?? "F"}
                 </div>
                 <div className="text-[13px] text-[#66746f]">
-                  <div>Confirmations: {selected.confirmationCount}</div>
-                  <div>Entries taken: {selected.entries.filter((e) => e.status === "TAKEN").length}</div>
+                  <div>{t("Confirmations")}: {selected.confirmationCount}</div>
+                  <div>{t("Entries taken:")} {selected.entries.filter((e) => e.status === "TAKEN").length}</div>
                 </div>
               </div>
             </Surface>
 
             <Surface>
-              <SectionTitle>Detail</SectionTitle>
+              <SectionTitle>{t("Detail")}</SectionTitle>
               <div className="mt-3 space-y-2 text-[13px]">
-                <div className="flex justify-between"><span className="text-[#66746f]">Setup</span><span className="font-medium">{selected.setupName}</span></div>
-                <div className="flex justify-between"><span className="text-[#66746f]">Bias</span><span className="font-medium">{selected.bias}</span></div>
-                <div className="flex justify-between"><span className="text-[#66746f]">Status</span><StatusPill status={selected.status} /></div>
+                <div className="flex justify-between"><span className="text-[#66746f]">{t("Setup")}</span><span className="font-medium">{selected.setupName}</span></div>
+                <div className="flex justify-between"><span className="text-[#66746f]">{t("Bias")}</span><span className="font-medium">{t(selected.bias)}</span></div>
+                <div className="flex justify-between"><span className="text-[#66746f]">{t("Status")}</span><StatusPill status={selected.status} /></div>
                 <p className="mt-2 rounded-md bg-[#f5f7f4] p-3 text-[#34413d]">{selected.primaryContext}</p>
               </div>
             </Surface>
 
             <Surface>
-              <SectionTitle>Entry Plan</SectionTitle>
+              <SectionTitle>{t("Entry Plan")}</SectionTitle>
               <div className="mt-3 space-y-2">
                 {selected.entries.map((entry) => (
                   <div key={entry.id} className="flex items-center justify-between gap-2 text-[13px]">

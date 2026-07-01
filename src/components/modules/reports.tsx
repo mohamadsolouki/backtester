@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Surface, SectionTitle, ModuleShell, Kpi, Segmented, ActionButton, EmptyState } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
 import { Download } from "lucide-react";
+import { useI18n } from "@/components/layout/i18n-provider";
 
 type SerializedTrade = {
   id: string;
@@ -30,6 +31,7 @@ function startOfPeriod(period: Period): Date {
 }
 
 export function ReportsView({ trades }: { trades: SerializedTrade[] }) {
+  const { t } = useI18n();
   const [period, setPeriod] = useState<Period>("Weekly");
 
   const { periodTrades, stats } = useMemo(() => {
@@ -66,31 +68,33 @@ export function ReportsView({ trades }: { trades: SerializedTrade[] }) {
 
   return (
     <ModuleShell
-      title="Reports"
-      eyebrow="Analyze"
-      description="Daily, weekly, and monthly performance summaries from your actual trade data."
-      actions={<ActionButton icon={Download} onClick={exportReport}>Export Report</ActionButton>}
+      title={t("Reports")}
+      eyebrow={t("Analyze")}
+      description={t("Daily, weekly, and monthly performance summaries from your actual trade data.")}
+      actions={<ActionButton icon={Download} onClick={exportReport}>{t("Export Report")}</ActionButton>}
     >
       <Surface>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <SectionTitle>{period} Report</SectionTitle>
+          <SectionTitle>{t(period)} {t("Report")}</SectionTitle>
           <Segmented value={period} options={["Daily", "Weekly", "Monthly"]} onChange={(v) => setPeriod(v as Period)} />
         </div>
 
         {periodTrades.length === 0 ? (
-          <EmptyState title="No trades in this period" description="Trades you log or import will appear here once they fall within the selected period." />
+          <EmptyState title={t("No trades in this period")} description={t("Trades you log or import will appear here once they fall within the selected period.")} />
         ) : (
           <>
             <div className="stagger mt-4 grid grid-cols-4 gap-2 max-[900px]:grid-cols-2 max-[560px]:grid-cols-1">
-              <Kpi label="Net PnL" value={formatCurrency(stats.pnl)} accent={stats.pnl >= 0 ? "up" : "down"} />
-              <Kpi label="Expectancy" value={`${stats.expectancy >= 0 ? "+" : ""}${stats.expectancy.toFixed(2)}R`} accent={stats.expectancy >= 0 ? "up" : "down"} />
-              <Kpi label="Trades" value={String(periodTrades.length)} />
-              <Kpi label="Rule Breaks" value={String(stats.ruleBreaks)} accent={stats.ruleBreaks > 0 ? "down" : "neutral"} />
+              <Kpi label={t("Net PnL")} value={formatCurrency(stats.pnl)} accent={stats.pnl >= 0 ? "up" : "down"} />
+              <Kpi label={t("Expectancy")} value={`${stats.expectancy >= 0 ? "+" : ""}${stats.expectancy.toFixed(2)}R`} accent={stats.expectancy >= 0 ? "up" : "down"} />
+              <Kpi label={t("Trades")} value={String(periodTrades.length)} />
+              <Kpi label={t("Rule Breaks")} value={String(stats.ruleBreaks)} accent={stats.ruleBreaks > 0 ? "down" : "neutral"} />
             </div>
-            <div className="mt-4 rounded-md border border-[var(--line)] bg-[var(--panel-soft)] p-4 text-[13px] leading-6 text-[var(--ink)]">
-              <strong className="font-display font-semibold">Summary.</strong> {periodTrades.length} trade{periodTrades.length === 1 ? "" : "s"} this {period.toLowerCase()} period,
-              most traded ticker was <strong>{stats.bestTicker}</strong>. Net result: <span className="num">{formatCurrency(stats.pnl)}</span>{" "}
-              with {stats.ruleBreaks} rule break{stats.ruleBreaks === 1 ? "" : "s"}.
+            <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border border-[var(--line)] bg-[var(--panel-soft)] p-4 text-[13px] leading-6 text-[var(--ink)]">
+              <strong className="font-display font-semibold">{t("Summary.")}</strong>
+              <span className="num">{periodTrades.length}</span> {t("Trades")} ·
+              {t("Most Traded")}: <strong>{stats.bestTicker}</strong> ·
+              {t("Net PnL")}: <span className="num">{formatCurrency(stats.pnl)}</span> ·
+              {t("Rule Breaks")}: <span className="num">{stats.ruleBreaks}</span>
             </div>
           </>
         )}

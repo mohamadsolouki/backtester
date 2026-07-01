@@ -5,6 +5,7 @@ import { Check, SlidersHorizontal, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { gradeTone } from "@/lib/context-engine";
 import type { Grade } from "@/lib/domain";
+import { useI18n } from "@/components/layout/i18n-provider";
 
 export function Surface({
   children,
@@ -32,7 +33,7 @@ export function SectionTitle({ children, eyebrow }: { children: ReactNode; eyebr
   return (
     <div className="flex items-baseline gap-2">
       {eyebrow && <span className="eyebrow text-[var(--teal-dark)]">{eyebrow}</span>}
-      <h2 className="relative pl-2.5 text-[13px] font-semibold uppercase tracking-[0.04em] before:absolute before:left-0 before:top-[3px] before:h-[11px] before:w-[2.5px] before:rounded-full before:bg-[var(--teal)] before:content-['']">
+      <h2 className="relative ps-2.5 text-[13px] font-semibold uppercase tracking-[0.04em] before:absolute before:start-0 before:top-[3px] before:h-[11px] before:w-[2.5px] before:rounded-full before:bg-[var(--teal)] before:content-['']">
         {children}
       </h2>
     </div>
@@ -55,7 +56,7 @@ export function ModuleShell({
   return (
     <div className="animate-fade-up space-y-2.5">
       <div className="relative flex flex-wrap items-center justify-between gap-3 overflow-hidden rounded-lg border border-[var(--line)] bg-[var(--panel)] p-5 text-[var(--ink)] shadow-soft">
-        <div className="absolute inset-y-0 left-0 w-[3px] bg-gradient-to-b from-[var(--teal)] to-[var(--teal-dark)]" />
+        <div className="absolute inset-y-0 start-0 w-[3px] bg-gradient-to-b from-[var(--teal)] to-[var(--teal-dark)]" />
         <div>
           {eyebrow && <div className="eyebrow mb-1.5 text-[var(--teal-dark)]">{eyebrow}</div>}
           <h1 className="font-display text-[26px] font-semibold tracking-[-0.01em] text-[var(--ink)]">{title}</h1>
@@ -148,7 +149,8 @@ const DOT_STYLES: Record<string, string> = {
 };
 
 export function StatusPill({ status, label }: { status: string; label?: string }) {
-  const displayLabel = label ?? status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const { t } = useI18n();
+  const displayLabel = t(label ?? status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()));
   return (
     <span
       className={cn(
@@ -191,6 +193,7 @@ export function Segmented({
   options: string[];
   onChange: (value: string) => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="flex h-8 overflow-hidden rounded-md border border-[var(--line)] bg-[var(--panel-soft)] p-0.5">
       {options.map((option) => (
@@ -204,7 +207,7 @@ export function Segmented({
               : "text-[var(--muted)] hover:text-[var(--ink)]"
           )}
         >
-          {option}
+          {t(option)}
         </button>
       ))}
     </div>

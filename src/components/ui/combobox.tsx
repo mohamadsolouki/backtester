@@ -4,6 +4,7 @@ import React, { useMemo, useRef, useState } from "react";
 import { Check, ChevronDown, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePopover } from "@/lib/use-popover";
+import { useI18n } from "@/components/layout/i18n-provider";
 
 export function Combobox({
   label,
@@ -29,6 +30,7 @@ export function Combobox({
   const [pending, setPending] = useState(false);
   const [prevValue, setPrevValue] = useState(value);
   const rootRef = useRef<HTMLDivElement>(null);
+  const { t } = useI18n();
 
   usePopover(rootRef, open, () => setOpen(false));
 
@@ -80,9 +82,9 @@ export function Combobox({
             onBlur={() => onChange(query)}
             placeholder={placeholder}
             required={required}
-            className="h-9 w-full rounded-md border border-[var(--line)] bg-[var(--panel)] px-3 pr-8 text-[var(--ink)] outline-none focus:border-[var(--teal)]"
+            className="h-9 w-full rounded-md border border-[var(--line)] bg-[var(--panel)] px-3 pe-8 text-[var(--ink)] outline-none focus:border-[var(--teal)]"
           />
-          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--muted)]" />
+          <ChevronDown className="pointer-events-none absolute end-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--muted)]" />
         </div>
       </label>
       {open && (filtered.length > 0 || showCreate) && (
@@ -94,7 +96,7 @@ export function Combobox({
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => select(opt)}
               className={cn(
-                "flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[13px] hover:bg-[var(--panel-soft)]",
+                "flex w-full items-center justify-between gap-2 px-3 py-2 text-start text-[13px] hover:bg-[var(--panel-soft)]",
                 opt === value && "text-[var(--teal-dark)]"
               )}
             >
@@ -108,10 +110,10 @@ export function Combobox({
               disabled={pending}
               onMouseDown={(e) => e.preventDefault()}
               onClick={handleCreate}
-              className="flex w-full items-center gap-2 border-t border-[var(--line)] px-3 py-2 text-left text-[13px] font-medium text-[var(--teal-dark)] hover:bg-[var(--panel-soft)] disabled:opacity-50"
+              className="flex w-full items-center gap-2 border-t border-[var(--line)] px-3 py-2 text-start text-[13px] font-medium text-[var(--teal-dark)] hover:bg-[var(--panel-soft)] disabled:opacity-50"
             >
               <Plus className="h-3.5 w-3.5" />
-              {pending ? "Adding…" : `Add "${query.trim()}"`}
+              {pending ? t("Adding…") : `${t("Add")} "${query.trim()}"`}
             </button>
           )}
         </div>

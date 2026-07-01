@@ -14,6 +14,7 @@ import {
   type DateRangePreset,
   type ResolvedDateRange,
 } from "@/lib/date-range";
+import { useI18n } from "@/components/layout/i18n-provider";
 
 export function DateRangePicker({
   preset,
@@ -26,6 +27,7 @@ export function DateRangePicker({
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const { t } = useI18n();
 
   usePopover(rootRef, open, () => setOpen(false));
 
@@ -38,7 +40,7 @@ export function DateRangePicker({
     onChange("custom", { from: next?.from, to: next?.to });
   }
 
-  const label = formatDateRangeLabel(preset, range, format);
+  const label = formatDateRangeLabel(preset, range, format, t);
 
   return (
     <div ref={rootRef} className="relative">
@@ -51,19 +53,19 @@ export function DateRangePicker({
         <CalendarDays className="h-3.5 w-3.5 text-white/64" />
       </button>
       {open && (
-        <div className="animate-scale-in absolute left-0 z-50 mt-2 flex origin-top-left overflow-hidden rounded-lg border border-[var(--line)] bg-[var(--panel)] text-[var(--ink)] shadow-soft max-[640px]:flex-col">
-          <div className="flex flex-col gap-1 border-r border-[var(--line)] p-2 max-[640px]:border-b max-[640px]:border-r-0">
+        <div className="animate-scale-in absolute start-0 z-50 mt-2 flex origin-top-left rtl:origin-top-right overflow-hidden rounded-lg border border-[var(--line)] bg-[var(--panel)] text-[var(--ink)] shadow-soft max-[640px]:flex-col">
+          <div className="flex flex-col gap-1 border-e border-[var(--line)] p-2 max-[640px]:border-b max-[640px]:border-e-0">
             {DATE_RANGE_PRESETS.map((item) => (
               <button
                 key={item.value}
                 type="button"
                 onClick={() => selectPreset(item.value)}
                 className={cn(
-                  "rounded-md px-3 py-1.5 text-left text-[12px] whitespace-nowrap hover:bg-[var(--panel-soft)]",
+                  "rounded-md px-3 py-1.5 text-start text-[12px] whitespace-nowrap hover:bg-[var(--panel-soft)]",
                   preset === item.value && "bg-[var(--panel-soft)] font-semibold text-[var(--teal-dark)]"
                 )}
               >
-                {item.label}
+                {t(item.label)}
               </button>
             ))}
           </div>

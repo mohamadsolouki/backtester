@@ -19,6 +19,15 @@ export const SESSION_DB_VALUES: Record<SessionName, string> = {
   "Post-Market": "POST_MARKET",
 };
 
+const DB_VALUE_TO_SESSION_NAME: Record<string, SessionName> = Object.fromEntries(
+  Object.entries(SESSION_DB_VALUES).map(([label, value]) => [value, label])
+) as Record<string, SessionName>;
+
+/** Reverses SESSION_DB_VALUES so a raw Prisma enum value can be displayed and translated. */
+export function sessionNameFromDbValue(value: string): SessionName {
+  return DB_VALUE_TO_SESSION_NAME[value] ?? (value as SessionName);
+}
+
 export function sessionsToDbValues(sessions: SessionName[]): string[] {
   return sessions.map((s) => SESSION_DB_VALUES[s]);
 }
@@ -59,17 +68,19 @@ export function resolvePreset(preset: DateRangePreset, now: Date = new Date()): 
 export function formatDateRangeLabel(
   preset: DateRangePreset,
   range: ResolvedDateRange,
-  formatFn: (date: Date, pattern: string) => string
+  formatFn: (date: Date, pattern: string) => string,
+  t: (source: string) => string = (s) => s
 ): string {
   if (preset !== "custom") {
-    return DATE_RANGE_PRESETS.find((p) => p.value === preset)?.label ?? "All Time";
+    const label = DATE_RANGE_PRESETS.find((p) => p.value === preset)?.label ?? "All Time";
+    return t(label);
   }
-  if (!range.from && !range.to) return "All Time";
+  if (!range.from && !range.to) return t("All Time");
   if (range.from && range.to) {
     return `${formatFn(range.from, "MMM d, yyyy")} – ${formatFn(range.to, "MMM d, yyyy")}`;
   }
-  if (range.from) return `From ${formatFn(range.from, "MMM d, yyyy")}`;
-  return `Until ${formatFn(range.to as Date, "MMM d, yyyy")}`;
+  if (range.from) return `${t("From")} ${formatFn(range.from, "MMM d, yyyy")}`;
+  return `${t("Until")} ${formatFn(range.to as Date, "MMM d, yyyy")}`;
 }
 
 export type DateRangeSearchParams = Record<string, string | string[] | undefined>;

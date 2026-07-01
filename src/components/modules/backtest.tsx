@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Surface, SectionTitle, ModuleShell, EmptyState } from "@/components/ui";
 import { formatPercent, cn } from "@/lib/utils";
 import { Upload } from "lucide-react";
+import { useI18n } from "@/components/layout/i18n-provider";
 
 type SerializedTrade = {
   id: string;
@@ -17,6 +18,7 @@ type SerializedTrade = {
 };
 
 export function BacktestView({ trades }: { trades: SerializedTrade[] }) {
+  const { t } = useI18n();
   const contextMatrix = useMemo(() => {
     const byTag: Record<string, { wins: number; total: number; rSum: number }> = {};
     trades.forEach((t) => {
@@ -42,27 +44,27 @@ export function BacktestView({ trades }: { trades: SerializedTrade[] }) {
 
   return (
     <ModuleShell
-      title="Edge Lab"
-      eyebrow="Analyze"
-      description="Context performance computed from trades linked to graded opportunities."
+      title={t("Edge Lab")}
+      eyebrow={t("Analyze")}
+      description={t("Context performance computed from trades linked to graded opportunities.")}
       actions={
         <Link
           href="/import"
           className="flex h-9 items-center gap-2 rounded-md border border-[var(--teal)]/40 bg-[var(--panel)] px-3 text-[12px] font-semibold text-[var(--teal-dark)] hover:bg-[var(--panel-soft)]"
         >
           <Upload className="h-3.5 w-3.5" />
-          Import Trades
+          {t("Import Trades")}
         </Link>
       }
     >
       {contextMatrix.length === 0 ? (
         <EmptyState
-          title="No context-tagged trades yet"
-          description="Open any trade in the Journal and tag its context signals to see which conditions actually perform best."
+          title={t("No context-tagged trades yet")}
+          description={t("Open any trade in the Journal and tag its context signals to see which conditions actually perform best.")}
         />
       ) : (
         <Surface>
-          <SectionTitle>Context Performance Matrix</SectionTitle>
+          <SectionTitle>{t("Context Performance Matrix")}</SectionTitle>
           <div className="stagger mt-3 grid grid-cols-2 gap-2 max-[768px]:grid-cols-1">
             {contextMatrix.map((row) => (
               <div key={row.tag} className="shadow-lift rounded-md border border-[var(--line)] p-3 text-[12px]">
@@ -73,8 +75,8 @@ export function BacktestView({ trades }: { trades: SerializedTrade[] }) {
                   </span>
                 </div>
                 <div className="num mt-2 grid grid-cols-2 gap-2 text-[var(--muted)]">
-                  <span>Win Rate {formatPercent(row.winRate)}</span>
-                  <span>{row.samples < 20 ? "⚠ " : ""}Samples {row.samples}</span>
+                  <span>{t("Win Rate")} {formatPercent(row.winRate)}</span>
+                  <span>{row.samples < 20 ? "⚠ " : ""}{t("Samples")} {row.samples}</span>
                 </div>
               </div>
             ))}

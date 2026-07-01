@@ -14,6 +14,7 @@ import { ChevronRight } from "lucide-react";
 import { Surface, SectionTitle, Kpi, StatusPill } from "@/components/ui";
 import { formatCurrency, formatPercent, cn } from "@/lib/utils";
 import { OnboardingBanner } from "@/components/modules/onboarding-banner";
+import { useI18n } from "@/components/layout/i18n-provider";
 
 type SerializedTrade = {
   id: string;
@@ -64,6 +65,7 @@ type Props = {
 };
 
 export function DashboardView({ opportunities, trades, playbooks, metrics, equityCurve, showOnboarding }: Props) {
+  const { t } = useI18n();
   const watching = opportunities.filter((o) => o.status === "WATCHING" || o.status === "PLANNED");
   const taken = opportunities.filter((o) => o.status === "TAKEN");
 
@@ -71,17 +73,17 @@ export function DashboardView({ opportunities, trades, playbooks, metrics, equit
     <div className="space-y-2">
       {showOnboarding && <OnboardingBanner />}
       <div className="stagger grid grid-cols-4 gap-2 max-[960px]:grid-cols-2 max-[560px]:grid-cols-1">
-        <Kpi label="Win Rate" value={metrics.totalTrades ? formatPercent(metrics.winRate) : "—"} accent={metrics.winRate >= 0.5 ? "up" : "down"} />
-        <Kpi label="Profit Factor" value={metrics.totalTrades ? metrics.profitFactor.toFixed(2) : "—"} accent={metrics.profitFactor >= 1 ? "up" : "down"} />
-        <Kpi label="Expectancy" value={metrics.totalTrades ? `${metrics.expectancy >= 0 ? "+" : ""}${metrics.expectancy.toFixed(2)}R` : "—"} accent={metrics.expectancy >= 0 ? "up" : "down"} />
-        <Kpi label="Total P&L" value={metrics.totalTrades ? formatCurrency(metrics.totalPnl) : "—"} accent={metrics.totalPnl >= 0 ? "up" : "down"} />
+        <Kpi label={t("Win Rate")} value={metrics.totalTrades ? formatPercent(metrics.winRate) : "—"} accent={metrics.winRate >= 0.5 ? "up" : "down"} />
+        <Kpi label={t("Profit Factor")} value={metrics.totalTrades ? metrics.profitFactor.toFixed(2) : "—"} accent={metrics.profitFactor >= 1 ? "up" : "down"} />
+        <Kpi label={t("Expectancy")} value={metrics.totalTrades ? `${metrics.expectancy >= 0 ? "+" : ""}${metrics.expectancy.toFixed(2)}R` : "—"} accent={metrics.expectancy >= 0 ? "up" : "down"} />
+        <Kpi label={t("Total P&L")} value={metrics.totalTrades ? formatCurrency(metrics.totalPnl) : "—"} accent={metrics.totalPnl >= 0 ? "up" : "down"} />
       </div>
 
       <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-2 max-[1100px]:grid-cols-1">
         <div className="space-y-2">
           {equityCurve.length > 1 && (
             <Surface>
-              <SectionTitle>Equity Curve</SectionTitle>
+              <SectionTitle>{t("Equity Curve")}</SectionTitle>
               <div className="mt-3 h-[200px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={equityCurve}>
@@ -104,24 +106,24 @@ export function DashboardView({ opportunities, trades, playbooks, metrics, equit
 
           <Surface>
             <div className="flex items-center justify-between">
-              <SectionTitle>Active Opportunities</SectionTitle>
+              <SectionTitle>{t("Active Opportunities")}</SectionTitle>
               <Link href="/opportunities" className="text-[12px] font-medium text-[var(--teal-dark)] hover:underline">
-                View all <ChevronRight className="ml-1 inline h-3 w-3" />
+                {t("View all")} <ChevronRight className="ms-1 inline h-3 w-3 rtl:-scale-x-100" />
               </Link>
             </div>
             {watching.length === 0 ? (
               <p className="mt-3 text-[13px] text-[var(--muted)]">
-                No active opportunities.{" "}
-                <Link href="/opportunities" className="text-[var(--teal-dark)] hover:underline">Create one</Link> or{" "}
-                <Link href="/import" className="text-[var(--teal-dark)] hover:underline">import from MetaTrader</Link>.
+                {t("No active opportunities.")}{" "}
+                <Link href="/opportunities" className="text-[var(--teal-dark)] hover:underline">{t("Create one")}</Link> {t("or")}{" "}
+                <Link href="/import" className="text-[var(--teal-dark)] hover:underline">{t("import from MetaTrader")}</Link>.
               </p>
             ) : (
               <div className="mt-3 overflow-x-auto">
-                <table className="w-full min-w-[500px] text-left text-[12px]">
+                <table className="w-full min-w-[500px] text-start text-[12px]">
                   <thead className="border-y border-[var(--line)] text-[var(--muted)]">
                     <tr>
                       {["Ticker", "Setup", "Status", "Confirmations", "Grade"].map((h) => (
-                        <th key={h} className="h-9 px-2 font-semibold">{h}</th>
+                        <th key={h} className="h-9 px-2 font-semibold">{t(h)}</th>
                       ))}
                     </tr>
                   </thead>
@@ -143,38 +145,38 @@ export function DashboardView({ opportunities, trades, playbooks, metrics, equit
 
           <Surface>
             <div className="flex items-center justify-between">
-              <SectionTitle>Recent Trades</SectionTitle>
+              <SectionTitle>{t("Recent Trades")}</SectionTitle>
               <Link href="/journal" className="text-[12px] font-medium text-[var(--teal-dark)] hover:underline">
-                View all <ChevronRight className="ml-1 inline h-3 w-3" />
+                {t("View all")} <ChevronRight className="ms-1 inline h-3 w-3 rtl:-scale-x-100" />
               </Link>
             </div>
             {trades.length === 0 ? (
               <p className="mt-3 text-[13px] text-[var(--muted)]">
-                No trades yet.{" "}
-                <Link href="/journal" className="text-[var(--teal-dark)] hover:underline">Add a trade</Link> or{" "}
-                <Link href="/import" className="text-[var(--teal-dark)] hover:underline">import from MetaTrader</Link>.
+                {t("No trades yet.")}{" "}
+                <Link href="/journal" className="text-[var(--teal-dark)] hover:underline">{t("Add a trade")}</Link> {t("or")}{" "}
+                <Link href="/import" className="text-[var(--teal-dark)] hover:underline">{t("import from MetaTrader")}</Link>.
               </p>
             ) : (
               <div className="mt-3 overflow-x-auto">
-                <table className="w-full min-w-[500px] text-left text-[12px]">
+                <table className="w-full min-w-[500px] text-start text-[12px]">
                   <thead className="border-y border-[var(--line)] text-[var(--muted)]">
                     <tr>
                       {["Date", "Ticker", "Direction", "R", "P&L", "Rule Break"].map((h) => (
-                        <th key={h} className="h-9 px-2 font-semibold">{h}</th>
+                        <th key={h} className="h-9 px-2 font-semibold">{t(h)}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {trades.slice(0, 8).map((t) => (
-                      <tr key={t.id} className="border-b border-[var(--line)]">
-                        <td className="num h-10 px-2 text-[var(--muted)]">{new Date(t.openedAt).toLocaleDateString()}</td>
-                        <td className="px-2 font-semibold">{t.ticker}</td>
-                        <td className="px-2"><StatusPill status={t.direction} label={t.direction} /></td>
-                        <td className={cn("num px-2 font-semibold", Number(t.rMultiple) >= 0 ? "text-[var(--teal-dark)]" : "text-[var(--red)]")}>
-                          {Number(t.rMultiple).toFixed(1)}R
+                    {trades.slice(0, 8).map((tr) => (
+                      <tr key={tr.id} className="border-b border-[var(--line)]">
+                        <td className="num h-10 px-2 text-[var(--muted)]">{new Date(tr.openedAt).toLocaleDateString()}</td>
+                        <td className="px-2 font-semibold">{tr.ticker}</td>
+                        <td className="px-2"><StatusPill status={tr.direction} label={tr.direction} /></td>
+                        <td className={cn("num px-2 font-semibold", Number(tr.rMultiple) >= 0 ? "text-[var(--teal-dark)]" : "text-[var(--red)]")}>
+                          {Number(tr.rMultiple).toFixed(1)}R
                         </td>
-                        <td className="num px-2">{formatCurrency(Number(t.pnl))}</td>
-                        <td className="px-2">{t.ruleBreaks.length > 0 ? <StatusPill status="SKIPPED" label="Yes" /> : "—"}</td>
+                        <td className="num px-2">{formatCurrency(Number(tr.pnl))}</td>
+                        <td className="px-2">{tr.ruleBreaks.length > 0 ? <StatusPill status="SKIPPED" label="Yes" /> : "—"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -186,7 +188,7 @@ export function DashboardView({ opportunities, trades, playbooks, metrics, equit
 
         <div className="space-y-2">
           <Surface>
-            <SectionTitle>Quick Actions</SectionTitle>
+            <SectionTitle>{t("Quick Actions")}</SectionTitle>
             <div className="mt-3 space-y-2">
               {[
                 { label: "Add Trade", href: "/journal", desc: "Record a new trade in your journal" },
@@ -199,19 +201,19 @@ export function DashboardView({ opportunities, trades, playbooks, metrics, equit
                   href={item.href}
                   className="shadow-lift block rounded-md border border-[var(--line)] p-3 hover:border-[var(--teal)]/50 hover:bg-[var(--panel-soft)]"
                 >
-                  <div className="text-[13px] font-semibold text-[var(--ink)]">{item.label}</div>
-                  <div className="mt-1 text-[12px] text-[var(--muted)]">{item.desc}</div>
+                  <div className="text-[13px] font-semibold text-[var(--ink)]">{t(item.label)}</div>
+                  <div className="mt-1 text-[12px] text-[var(--muted)]">{t(item.desc)}</div>
                 </Link>
               ))}
             </div>
           </Surface>
 
           <Surface>
-            <SectionTitle>Active Playbooks</SectionTitle>
+            <SectionTitle>{t("Active Playbooks")}</SectionTitle>
             {playbooks.length === 0 ? (
               <p className="mt-3 text-[13px] text-[var(--muted)]">
-                No playbooks yet.{" "}
-                <Link href="/playbook" className="text-[var(--teal-dark)] hover:underline">Create one</Link>.
+                {t("No playbooks yet.")}{" "}
+                <Link href="/playbook" className="text-[var(--teal-dark)] hover:underline">{t("Create one")}</Link>.
               </p>
             ) : (
               <div className="mt-3 space-y-2">
@@ -230,13 +232,13 @@ export function DashboardView({ opportunities, trades, playbooks, metrics, equit
           </Surface>
 
           <Surface>
-            <SectionTitle>Stats Summary</SectionTitle>
+            <SectionTitle>{t("Stats Summary")}</SectionTitle>
             <div className="mt-3 space-y-2 text-[13px]">
-              <div className="flex justify-between"><span className="text-[var(--muted)]">Total Trades</span><span className="num font-semibold">{metrics.totalTrades}</span></div>
-              <div className="flex justify-between"><span className="text-[var(--muted)]">Avg R</span><span className="num font-semibold">{metrics.avgR.toFixed(2)}R</span></div>
-              <div className="flex justify-between"><span className="text-[var(--muted)]">Max Drawdown</span><span className="num font-semibold text-[var(--red)]">{formatCurrency(metrics.maxDrawdown)}</span></div>
-              <div className="flex justify-between"><span className="text-[var(--muted)]">Rule Breaks</span><span className="num font-semibold">{metrics.ruleBreaks}</span></div>
-              <div className="flex justify-between"><span className="text-[var(--muted)]">Opportunities</span><span className="num font-semibold">{watching.length} watching / {taken.length} taken</span></div>
+              <div className="flex justify-between"><span className="text-[var(--muted)]">{t("Total Trades")}</span><span className="num font-semibold">{metrics.totalTrades}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--muted)]">{t("Avg R")}</span><span className="num font-semibold">{metrics.avgR.toFixed(2)}R</span></div>
+              <div className="flex justify-between"><span className="text-[var(--muted)]">{t("Max Drawdown")}</span><span className="num font-semibold text-[var(--red)]">{formatCurrency(metrics.maxDrawdown)}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--muted)]">{t("Rule Breaks")}</span><span className="num font-semibold">{metrics.ruleBreaks}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--muted)]">{t("Opportunities")}</span><span className="num font-semibold">{watching.length} {t("Watching")} / {taken.length} {t("Taken")}</span></div>
             </div>
           </Surface>
         </div>
