@@ -3,7 +3,11 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { computeEquityCurve } from "@/lib/utils";
 import { DashboardView } from "@/components/modules/dashboard";
-import { parseDateRangeSearchParams, sessionsToDbValues, type DateRangeSearchParams } from "@/lib/date-range";
+import {
+  parseDateRangeSearchParams,
+  sessionsToDbValues,
+  type DateRangeSearchParams,
+} from "@/lib/date-range";
 import type { SessionName as DbSessionName } from "@prisma/client";
 import { getUserSettings } from "@/app/actions/settings";
 
@@ -19,7 +23,10 @@ export default async function DashboardPage({
 
   const dateFilter =
     range.from || range.to
-      ? { ...(range.from ? { gte: range.from } : {}), ...(range.to ? { lte: range.to } : {}) }
+      ? {
+          ...(range.from ? { gte: range.from } : {}),
+          ...(range.to ? { lte: range.to } : {}),
+        }
       : undefined;
 
   const [opportunities, trades, playbooks, settings] = await Promise.all([
@@ -27,7 +34,9 @@ export default async function DashboardPage({
       where: {
         userId,
         ...(dateFilter ? { plannedAt: dateFilter } : {}),
-        ...(sessionDbValues.length ? { sessionName: { in: sessionDbValues } } : {}),
+        ...(sessionDbValues.length
+          ? { sessionName: { in: sessionDbValues } }
+          : {}),
       },
       include: { contextTags: true, entries: true },
       orderBy: { plannedAt: "desc" },
@@ -38,10 +47,12 @@ export default async function DashboardPage({
         userId,
         status: "CLOSED",
         ...(dateFilter ? { openedAt: dateFilter } : {}),
-        ...(sessionDbValues.length ? { sessionName: { in: sessionDbValues } } : {}),
+        ...(sessionDbValues.length
+          ? { sessionName: { in: sessionDbValues } }
+          : {}),
       },
       include: { ruleBreaks: true },
-      orderBy: { openedAt: "desc" },
+      orderBy: [{ openedAt: "desc" }, { createdAt: "asc" }],
     }),
     prisma.playbookSetup.findMany({
       where: { userId, active: true },
@@ -57,15 +68,22 @@ export default async function DashboardPage({
   const grossLoss = Math.abs(losses.reduce((s, r) => s + r, 0));
 
   const { rows: equityCurve, maxDrawdown } = computeEquityCurve(
-    trades.slice().reverse().map((t) => ({ openedAt: t.openedAt, pnl: Number(t.pnl) }))
+    trades
+      .slice()
+      .reverse()
+      .map((t) => ({ openedAt: t.openedAt, pnl: Number(t.pnl) })),
   );
 
   const metrics = {
     totalTrades: trades.length,
     winRate: trades.length ? wins.length / trades.length : 0,
     profitFactor: grossLoss ? grossProfit / grossLoss : 0,
-    expectancy: trades.length ? rValues.reduce((s, r) => s + r, 0) / trades.length : 0,
-    avgR: trades.length ? rValues.reduce((s, r) => s + r, 0) / trades.length : 0,
+    expectancy: trades.length
+      ? rValues.reduce((s, r) => s + r, 0) / trades.length
+      : 0,
+    avgR: trades.length
+      ? rValues.reduce((s, r) => s + r, 0) / trades.length
+      : 0,
     totalPnl: trades.reduce((s, t) => s + Number(t.pnl), 0),
     maxDrawdown,
     ruleBreaks: trades.filter((t) => t.ruleBreaks.length > 0).length,

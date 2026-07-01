@@ -32,11 +32,15 @@ const createTradeSchema = z.object({
   status: z.enum(["OPEN", "CLOSED", "SCRATCH"]).default("CLOSED"),
   notes: z.string().optional(),
   opportunityId: z.string().optional(),
-  ruleBreaks: z.array(z.object({
-    rule: z.string(),
-    severity: z.number().int().min(1).max(5).default(1),
-    description: z.string().optional(),
-  })).optional(),
+  ruleBreaks: z
+    .array(
+      z.object({
+        rule: z.string(),
+        severity: z.number().int().min(1).max(5).default(1),
+        description: z.string().optional(),
+      }),
+    )
+    .optional(),
 });
 
 export async function createTrade(input: z.input<typeof createTradeSchema>) {
@@ -95,7 +99,9 @@ export async function getTrades(filters?: {
       ...(filters?.ticker ? { ticker: filters.ticker } : {}),
       ...(filters?.direction ? { direction: filters.direction } : {}),
       ...(filters?.status ? { status: filters.status } : {}),
-      ...(filters?.sessionNames?.length ? { sessionName: { in: filters.sessionNames } } : {}),
+      ...(filters?.sessionNames?.length
+        ? { sessionName: { in: filters.sessionNames } }
+        : {}),
     },
     include: {
       ruleBreaks: true,
@@ -104,7 +110,7 @@ export async function getTrades(filters?: {
       opportunity: { include: { contextTags: true } },
       contextTags: true,
     },
-    orderBy: { openedAt: "desc" },
+    orderBy: [{ openedAt: "desc" }, { createdAt: "asc" }],
   });
 }
 
@@ -125,10 +131,15 @@ export async function getTrade(id: string) {
 /** Lazily seeds a trade's own context tags from the user's tag vocabulary, then returns them. */
 export async function ensureTradeContextTags(tradeId: string) {
   const userId = await requireUser();
-  const trade = await prisma.trade.findFirst({ where: { id: tradeId, userId } });
+  const trade = await prisma.trade.findFirst({
+    where: { id: tradeId, userId },
+  });
   if (!trade) throw new Error("Not found");
 
-  const existing = await prisma.tradeContextTag.findMany({ where: { tradeId }, orderBy: { name: "asc" } });
+  const existing = await prisma.tradeContextTag.findMany({
+    where: { tradeId },
+    orderBy: { name: "asc" },
+  });
   if (existing.length > 0) return existing;
 
   const tagDefinitions = await getContextTagDefinitions();
@@ -143,18 +154,28 @@ export async function ensureTradeContextTags(tradeId: string) {
     skipDuplicates: true,
   });
 
-  return prisma.tradeContextTag.findMany({ where: { tradeId }, orderBy: { name: "asc" } });
+  return prisma.tradeContextTag.findMany({
+    where: { tradeId },
+    orderBy: { name: "asc" },
+  });
 }
 
 export async function toggleTradeContextTag(tradeId: string, tagId: string) {
   const userId = await requireUser();
-  const trade = await prisma.trade.findFirst({ where: { id: tradeId, userId } });
+  const trade = await prisma.trade.findFirst({
+    where: { id: tradeId, userId },
+  });
   if (!trade) throw new Error("Not found");
 
-  const tag = await prisma.tradeContextTag.findFirst({ where: { id: tagId, tradeId } });
+  const tag = await prisma.tradeContextTag.findFirst({
+    where: { id: tagId, tradeId },
+  });
   if (!tag) throw new Error("Tag not found");
 
-  await prisma.tradeContextTag.update({ where: { id: tagId }, data: { enabled: !tag.enabled } });
+  await prisma.tradeContextTag.update({
+    where: { id: tagId },
+    data: { enabled: !tag.enabled },
+  });
   revalidatePath("/journal");
   revalidatePath("/backtest");
   revalidatePath("/");
@@ -165,7 +186,7 @@ export async function updateTrade(
   input: Partial<z.infer<typeof createTradeSchema>> & {
     ruleBreaksToAdd?: { rule: string; severity: number }[];
     ruleBreakIdsToRemove?: string[];
-  }
+  },
 ) {
   const userId = await requireUser();
   const existing = await prisma.trade.findFirst({ where: { id, userId } });
@@ -181,9 +202,15 @@ export async function updateTrade(
         ...(fields.direction ? { direction: fields.direction } : {}),
         ...(fields.sessionName ? { sessionName: fields.sessionName } : {}),
         ...(fields.quantity !== undefined ? { quantity: fields.quantity } : {}),
-        ...(fields.entryPrice !== undefined ? { entryPrice: fields.entryPrice } : {}),
-        ...(fields.exitPrice !== undefined ? { exitPrice: fields.exitPrice } : {}),
-        ...(fields.rMultiple !== undefined ? { rMultiple: fields.rMultiple } : {}),
+        ...(fields.entryPrice !== undefined
+          ? { entryPrice: fields.entryPrice }
+          : {}),
+        ...(fields.exitPrice !== undefined
+          ? { exitPrice: fields.exitPrice }
+          : {}),
+        ...(fields.rMultiple !== undefined
+          ? { rMultiple: fields.rMultiple }
+          : {}),
         ...(fields.pnl !== undefined ? { pnl: fields.pnl } : {}),
         ...(fields.fees !== undefined ? { fees: fields.fees } : {}),
         ...(fields.openedAt ? { openedAt: fields.openedAt } : {}),
@@ -193,10 +220,14 @@ export async function updateTrade(
       },
     });
     if (ruleBreakIdsToRemove?.length) {
-      await tx.ruleBreak.deleteMany({ where: { id: { in: ruleBreakIdsToRemove }, tradeId: id } });
+      await tx.ruleBreak.deleteMany({
+        where: { id: { in: ruleBreakIdsToRemove }, tradeId: id },
+      });
     }
     if (ruleBreaksToAdd?.length) {
-      await tx.ruleBreak.createMany({ data: ruleBreaksToAdd.map((rb) => ({ ...rb, tradeId: id })) });
+      await tx.ruleBreak.createMany({
+        data: ruleBreaksToAdd.map((rb) => ({ ...rb, tradeId: id })),
+      });
     }
   });
 
@@ -226,7 +257,12 @@ export async function clearAllTrades() {
 }
 
 export async function checkImportDuplicates(
-  candidates: { ticker: string; direction: "LONG" | "SHORT"; openedAt: string; entryPrice: number }[]
+  candidates: {
+    ticker: string;
+    direction: "LONG" | "SHORT";
+    openedAt: string;
+    entryPrice: number;
+  }[],
 ): Promise<boolean[]> {
   const userId = await requireUser();
   const results: boolean[] = [];
@@ -255,7 +291,10 @@ export async function checkImportDuplicates(
   return results;
 }
 
-export async function bulkCreateTrades(trades: z.input<typeof createTradeSchema>[], fileName?: string) {
+export async function bulkCreateTrades(
+  trades: z.input<typeof createTradeSchema>[],
+  fileName?: string,
+) {
   const userId = await requireUser();
   const results = [];
   let skipped = 0;
@@ -279,7 +318,10 @@ export async function bulkCreateTrades(trades: z.input<typeof createTradeSchema>
       },
       select: { id: true },
     });
-    if (duplicate) { skipped++; continue; }
+    if (duplicate) {
+      skipped++;
+      continue;
+    }
 
     const trade = await prisma.trade.create({
       data: {
@@ -326,33 +368,52 @@ export async function getTradeStats() {
   const userId = await requireUser();
   const trades = await prisma.trade.findMany({
     where: { userId, status: "CLOSED" },
-    select: { rMultiple: true, pnl: true, openedAt: true, direction: true, ticker: true, sessionName: true },
-    orderBy: { openedAt: "asc" },
+    select: {
+      rMultiple: true,
+      pnl: true,
+      openedAt: true,
+      direction: true,
+      ticker: true,
+      sessionName: true,
+    },
+    orderBy: [{ openedAt: "asc" }, { createdAt: "asc" }],
   });
 
-  const rValues = trades.map(t => Number(t.rMultiple));
-  const pnlValues = trades.map(t => Number(t.pnl));
-  const wins = rValues.filter(r => r > 0);
-  const losses = rValues.filter(r => r < 0);
+  const rValues = trades.map((t) => Number(t.rMultiple));
+  const pnlValues = trades.map((t) => Number(t.pnl));
+  const wins = rValues.filter((r) => r > 0);
+  const losses = rValues.filter((r) => r < 0);
   const grossProfit = wins.reduce((s, r) => s + r, 0);
   const grossLoss = Math.abs(losses.reduce((s, r) => s + r, 0));
 
   let equity = 0;
   let maxEquity = 0;
   let maxDrawdown = 0;
-  const equityCurve = trades.map(t => {
+  const equityCurve = trades.map((t) => {
     equity += Number(t.pnl);
     maxEquity = Math.max(maxEquity, equity);
     maxDrawdown = Math.min(maxDrawdown, equity - maxEquity);
-    return { date: t.openedAt.toISOString().slice(0, 10), equity, pnl: Number(t.pnl) };
+    return {
+      date: t.openedAt.toISOString().slice(0, 10),
+      equity,
+      pnl: Number(t.pnl),
+    };
   });
 
   return {
     totalTrades: trades.length,
     winRate: trades.length ? wins.length / trades.length : 0,
-    profitFactor: grossLoss ? grossProfit / grossLoss : grossProfit > 0 ? Infinity : 0,
-    expectancy: trades.length ? rValues.reduce((s, r) => s + r, 0) / trades.length : 0,
-    avgR: trades.length ? rValues.reduce((s, r) => s + r, 0) / trades.length : 0,
+    profitFactor: grossLoss
+      ? grossProfit / grossLoss
+      : grossProfit > 0
+        ? Infinity
+        : 0,
+    expectancy: trades.length
+      ? rValues.reduce((s, r) => s + r, 0) / trades.length
+      : 0,
+    avgR: trades.length
+      ? rValues.reduce((s, r) => s + r, 0) / trades.length
+      : 0,
     totalPnl: pnlValues.reduce((s, p) => s + p, 0),
     maxDrawdown,
     equityCurve,

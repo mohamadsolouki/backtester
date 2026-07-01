@@ -6,7 +6,11 @@ import * as XLSX from "xlsx";
 import { Upload, Check, AlertTriangle } from "lucide-react";
 import { Surface, SectionTitle, ModuleShell } from "@/components/ui";
 import { cn, formatCurrency } from "@/lib/utils";
-import { parseMetaTraderFile, parseMT5ExcelRows, type ParseResult } from "@/lib/metatrader";
+import {
+  parseMetaTraderFile,
+  parseMT5ExcelRows,
+  type ParseResult,
+} from "@/lib/metatrader";
 import { bulkCreateTrades, checkImportDuplicates } from "@/app/actions/trades";
 import { useI18n } from "@/components/layout/i18n-provider";
 
@@ -20,7 +24,9 @@ type SerializedBatch = {
   createdAt: string;
 };
 
-function mapSessionName(date: Date): "PRE_MARKET" | "OPEN" | "MIDDAY" | "CLOSE" | "POST_MARKET" {
+function mapSessionName(
+  date: Date,
+): "PRE_MARKET" | "OPEN" | "MIDDAY" | "CLOSE" | "POST_MARKET" {
   const hour = date.getHours();
   if (hour < 9) return "PRE_MARKET";
   if (hour < 11) return "OPEN";
@@ -58,14 +64,20 @@ export function ImportView({ batches }: { batches: SerializedBatch[] }) {
           direction: t.direction,
           openedAt: t.openedAt.toISOString(),
           entryPrice: t.entryPrice,
-        }))
+        })),
       );
-      const dupeSet = new Set<number>(dupeFlags.map((d, i) => (d ? i : -1)).filter((i) => i >= 0));
+      const dupeSet = new Set<number>(
+        dupeFlags.map((d, i) => (d ? i : -1)).filter((i) => i >= 0),
+      );
       setDuplicates(dupeSet);
       // Auto-select only non-duplicates
-      setSelected(new Set(parsed.trades.map((_, i) => i).filter((i) => !dupeSet.has(i))));
+      setSelected(
+        new Set(parsed.trades.map((_, i) => i).filter((i) => !dupeSet.has(i))),
+      );
       const newCount = parsed.trades.length - dupeSet.size;
-      toast.success(`${parsed.trades.length} ${t("Trades")}: ${newCount} ${t("new")}, ${dupeSet.size} ${t("already imported")}`);
+      toast.success(
+        `${parsed.trades.length} ${t("Trades")}: ${newCount} ${t("new")}, ${dupeSet.size} ${t("already imported")}`,
+      );
     } catch {
       setSelected(new Set(parsed.trades.map((_, i) => i)));
       toast.success(`${t("Preview")}: ${parsed.trades.length} ${t("Trades")}`);
@@ -81,11 +93,14 @@ export function ImportView({ batches }: { batches: SerializedBatch[] }) {
       file.arrayBuffer().then((buffer) => {
         const workbook = XLSX.read(buffer, { type: "array" });
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json<(string | number | undefined)[]>(sheet, {
-          header: 1,
-          raw: true,
-          defval: "",
-        });
+        const rows = XLSX.utils.sheet_to_json<(string | number | undefined)[]>(
+          sheet,
+          {
+            header: 1,
+            raw: true,
+            defval: "",
+          },
+        );
         applyParseResult(parseMT5ExcelRows(rows), file.name);
       });
       return;
@@ -119,7 +134,9 @@ export function ImportView({ batches }: { batches: SerializedBatch[] }) {
 
   function selectNewOnly() {
     if (!result) return;
-    setSelected(new Set(result.trades.map((_, i) => i).filter((i) => !duplicates.has(i))));
+    setSelected(
+      new Set(result.trades.map((_, i) => i).filter((i) => !duplicates.has(i))),
+    );
   }
 
   function importSelected() {
@@ -133,24 +150,41 @@ export function ImportView({ batches }: { batches: SerializedBatch[] }) {
         quantity: t.volume,
         entryPrice: t.entryPrice,
         exitPrice: t.exitPrice || undefined,
-        rMultiple: t.profit > 0
-          ? Math.abs(t.profit / Math.max(Math.abs(t.entryPrice - (t.stopLoss ?? t.entryPrice)), 1))
-          : t.profit < 0
-          ? -Math.abs(t.profit / Math.max(Math.abs(t.entryPrice - (t.stopLoss ?? t.entryPrice)), 1))
-          : 0,
+        rMultiple:
+          t.profit > 0
+            ? Math.abs(
+                t.profit /
+                  Math.max(
+                    Math.abs(t.entryPrice - (t.stopLoss ?? t.entryPrice)),
+                    1,
+                  ),
+              )
+            : t.profit < 0
+              ? -Math.abs(
+                  t.profit /
+                    Math.max(
+                      Math.abs(t.entryPrice - (t.stopLoss ?? t.entryPrice)),
+                      1,
+                    ),
+                )
+              : 0,
         pnl: t.profit,
         fees: Math.abs(t.commission) + Math.abs(t.swap),
         openedAt: t.openedAt,
         closedAt: t.closedAt ?? undefined,
         status: t.closedAt ? ("CLOSED" as const) : ("OPEN" as const),
-        notes: t.comment || `Imported from ${fileName} (ticket: ${t.ticket})`,
+        notes: t.comment || undefined,
       }));
 
     startImport(async () => {
-      const { trades: created, skipped } = await bulkCreateTrades(trades, fileName);
-      const msg = skipped > 0
-        ? `Imported ${created.length} trades, skipped ${skipped} duplicates`
-        : `Imported ${created.length} trades`;
+      const { trades: created, skipped } = await bulkCreateTrades(
+        trades,
+        fileName,
+      );
+      const msg =
+        skipped > 0
+          ? `Imported ${created.length} trades, skipped ${skipped} duplicates`
+          : `Imported ${created.length} trades`;
       toast.success(msg);
       setResult(null);
       setSelected(new Set());
@@ -158,23 +192,31 @@ export function ImportView({ batches }: { batches: SerializedBatch[] }) {
     });
   }
 
-  const newCount = result ? result.trades.filter((_, i) => !duplicates.has(i)).length : 0;
+  const newCount = result
+    ? result.trades.filter((_, i) => !duplicates.has(i)).length
+    : 0;
   const dupeCount = duplicates.size;
 
   return (
     <ModuleShell
       title={t("Import Trades")}
       eyebrow={t("System")}
-      description={t("Import trade history from MetaTrader (MT4/MT5), CSV, or XLSX files.")}
+      description={t(
+        "Import trade history from MetaTrader (MT4/MT5), CSV, or XLSX files.",
+      )}
     >
       <Surface>
         <SectionTitle>{t("Upload File")}</SectionTitle>
         <div className="mt-3">
           <label className="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-[var(--line)] p-6 text-center transition-all hover:border-[var(--teal)] hover:bg-[var(--teal-soft)]">
             <Upload className="h-8 w-8 text-[var(--teal)]" />
-            <div className="mt-2 text-[14px] font-semibold">{t("Drop file or click to browse")}</div>
+            <div className="mt-2 text-[14px] font-semibold">
+              {t("Drop file or click to browse")}
+            </div>
             <p className="mt-1 text-[12px] text-[var(--muted)]">
-              {t('Supports MT5 "Trade History Report" Excel exports, MT4 HTML statements, MT5 XML exports, and CSV files')}
+              {t(
+                'Supports MT5 "Trade History Report" Excel exports, MT4 HTML statements, MT5 XML exports, and CSV files',
+              )}
             </p>
             <input
               type="file"
@@ -203,33 +245,53 @@ export function ImportView({ batches }: { batches: SerializedBatch[] }) {
         <Surface>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <SectionTitle>{t("Preview")} — {fileName}</SectionTitle>
+              <SectionTitle>
+                {t("Preview")} — {fileName}
+              </SectionTitle>
               <div className="mt-1 flex flex-wrap gap-3 text-[12px] text-[var(--muted)]">
-                <span>{result.trades.length} {t("total")}</span>
+                <span>
+                  {result.trades.length} {t("total")}
+                </span>
                 {dupeCount > 0 && (
                   <span className="font-medium text-[var(--amber)]">
                     {dupeCount} {t("already imported")}
                   </span>
                 )}
-                <span className="font-medium text-[var(--teal-dark)]">{newCount} {t("new")}</span>
-                <span>{selected.size} {t("selected")}</span>
+                <span className="font-medium text-[var(--teal-dark)]">
+                  {newCount} {t("new")}
+                </span>
+                <span>
+                  {selected.size} {t("selected")}
+                </span>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
               {dupeCount > 0 && (
-                <button onClick={selectNewOnly} className="h-8 rounded-md border border-[var(--line)] px-3 text-[12px] font-medium hover:bg-[var(--panel-soft)]">
+                <button
+                  onClick={selectNewOnly}
+                  className="h-8 rounded-md border border-[var(--line)] px-3 text-[12px] font-medium hover:bg-[var(--panel-soft)]"
+                >
                   {t("New Only")}
                 </button>
               )}
-              <button onClick={toggleAll} className="h-8 rounded-md border border-[var(--line)] px-3 text-[12px] font-medium hover:bg-[var(--panel-soft)]">
-                {t(selected.size === result.trades.length ? "Deselect All" : "Select All")}
+              <button
+                onClick={toggleAll}
+                className="h-8 rounded-md border border-[var(--line)] px-3 text-[12px] font-medium hover:bg-[var(--panel-soft)]"
+              >
+                {t(
+                  selected.size === result.trades.length
+                    ? "Deselect All"
+                    : "Select All",
+                )}
               </button>
               <button
                 onClick={importSelected}
                 disabled={importing || selected.size === 0}
                 className="h-8 rounded-md bg-[var(--teal)] px-4 text-[12px] font-semibold text-white hover:bg-[var(--teal-dark)] disabled:opacity-50"
               >
-                {importing ? t("Importing...") : `${t("Import")} ${selected.size} ${t("Trades")}`}
+                {importing
+                  ? t("Importing...")
+                  : `${t("Import")} ${selected.size} ${t("Trades")}`}
               </button>
             </div>
           </div>
@@ -240,16 +302,27 @@ export function ImportView({ batches }: { batches: SerializedBatch[] }) {
                 <AlertTriangle className="h-4 w-4" /> {t("Parse Warnings")}
               </div>
               <div className="mt-2 space-y-1 text-[12px] text-[var(--amber)]">
-                {result.errors.slice(0, 5).map((err, i) => <div key={i}>{err}</div>)}
-                {result.errors.length > 5 && <div>…{t("and")} {result.errors.length - 5} {t("more")}</div>}
+                {result.errors.slice(0, 5).map((err, i) => (
+                  <div key={i}>{err}</div>
+                ))}
+                {result.errors.length > 5 && (
+                  <div>
+                    …{t("and")} {result.errors.length - 5} {t("more")}
+                  </div>
+                )}
               </div>
             </div>
           )}
 
           {dupeCount > 0 && (
             <div className="mt-3 rounded-md border border-[var(--amber)]/30 bg-[var(--amber)]/8 p-3 text-[12px] text-[var(--amber)]">
-              <span className="font-semibold">{t("Duplicate rows are highlighted in amber")}</span> — {t("they match trades already in your journal.")}
-              {" "}{t("They are auto-deselected but you can re-check them to force re-import.")}
+              <span className="font-semibold">
+                {t("Duplicate rows are highlighted in amber")}
+              </span>{" "}
+              — {t("they match trades already in your journal.")}{" "}
+              {t(
+                "They are auto-deselected but you can re-check them to force re-import.",
+              )}
             </div>
           )}
 
@@ -258,8 +331,21 @@ export function ImportView({ batches }: { batches: SerializedBatch[] }) {
               <thead className="border-y border-[var(--line)] text-[var(--muted)]">
                 <tr>
                   <th className="h-9 w-8 px-2"></th>
-                  {["Ticket", "Symbol", "Dir", "Volume", "Entry", "Exit", "P&L", "Commission", "Opened", "Closed"].map((h) => (
-                    <th key={h} className="h-9 px-2 font-semibold">{t(h)}</th>
+                  {[
+                    "Ticket",
+                    "Symbol",
+                    "Dir",
+                    "Volume",
+                    "Entry",
+                    "Exit",
+                    "P&L",
+                    "Commission",
+                    "Opened",
+                    "Closed",
+                  ].map((h) => (
+                    <th key={h} className="h-9 px-2 font-semibold">
+                      {t(h)}
+                    </th>
                   ))}
                   <th className="h-9 px-2"></th>
                 </tr>
@@ -275,33 +361,53 @@ export function ImportView({ batches }: { batches: SerializedBatch[] }) {
                       className={cn(
                         "cursor-pointer border-b border-[var(--line)] hover:bg-[var(--panel-soft)]",
                         isSel && !isDupe && "bg-[var(--panel-soft)]",
-                        isDupe && "bg-[var(--amber)]/5"
+                        isDupe && "bg-[var(--amber)]/5",
                       )}
                     >
                       <td className="px-2">
-                        <span className={cn(
-                          "flex h-4 w-4 items-center justify-center rounded border",
-                          isSel ? "border-[var(--teal)] bg-[var(--teal)] text-white" : "border-[var(--line)]"
-                        )}>
+                        <span
+                          className={cn(
+                            "flex h-4 w-4 items-center justify-center rounded border",
+                            isSel
+                              ? "border-[var(--teal)] bg-[var(--teal)] text-white"
+                              : "border-[var(--line)]",
+                          )}
+                        >
                           {isSel && <Check className="h-3 w-3" />}
                         </span>
                       </td>
                       <td className="h-10 px-2">{row.ticket}</td>
                       <td className="px-2 font-semibold">{row.symbol}</td>
                       <td className="px-2">
-                        <span className={cn("font-medium", row.direction === "LONG" ? "text-[var(--teal-dark)]" : "text-[var(--red)]")}>
+                        <span
+                          className={cn(
+                            "font-medium",
+                            row.direction === "LONG"
+                              ? "text-[var(--teal-dark)]"
+                              : "text-[var(--red)]",
+                          )}
+                        >
                           {t(row.direction)}
                         </span>
                       </td>
                       <td className="px-2">{row.volume}</td>
                       <td className="px-2">{row.entryPrice.toFixed(5)}</td>
                       <td className="px-2">{row.exitPrice.toFixed(5)}</td>
-                      <td className={cn("px-2 font-semibold", row.profit >= 0 ? "text-[var(--teal-dark)]" : "text-[var(--red)]")}>
+                      <td
+                        className={cn(
+                          "px-2 font-semibold",
+                          row.profit >= 0
+                            ? "text-[var(--teal-dark)]"
+                            : "text-[var(--red)]",
+                        )}
+                      >
                         {formatCurrency(row.profit)}
                       </td>
                       <td className="px-2">{formatCurrency(row.commission)}</td>
                       <td className="px-2">{row.openedAt.toLocaleString()}</td>
-                      <td className="px-2">{row.closedAt?.toLocaleString() ?? t("Open")}</td>
+                      <td className="px-2">
+                        {row.closedAt?.toLocaleString() ?? t("Open")}
+                      </td>
                       <td className="px-2">
                         {isDupe && (
                           <span className="rounded-full bg-[var(--amber)]/20 px-2 py-0.5 text-[10px] font-semibold text-[var(--amber)]">
@@ -325,20 +431,36 @@ export function ImportView({ batches }: { batches: SerializedBatch[] }) {
             <table className="w-full text-start text-[12px]">
               <thead className="border-y border-[var(--line)] text-[var(--muted)]">
                 <tr>
-                  {["Date", "File", "Type", "Rows", "Imported", "Skipped"].map((h) => (
-                    <th key={h} className="h-9 px-2 font-semibold">{t(h)}</th>
-                  ))}
+                  {["Date", "File", "Type", "Rows", "Imported", "Skipped"].map(
+                    (h) => (
+                      <th key={h} className="h-9 px-2 font-semibold">
+                        {t(h)}
+                      </th>
+                    ),
+                  )}
                 </tr>
               </thead>
               <tbody>
                 {batches.map((b) => (
                   <tr key={b.id} className="border-b border-[var(--line)]">
-                    <td className="h-10 px-2">{new Date(b.createdAt).toLocaleDateString()}</td>
+                    <td className="h-10 px-2">
+                      {new Date(b.createdAt).toLocaleDateString()}
+                    </td>
                     <td className="px-2 font-medium">{b.fileName}</td>
                     <td className="px-2">{b.fileType}</td>
                     <td className="px-2">{b.rowCount}</td>
-                    <td className="px-2 text-[var(--teal-dark)]">{b.validRows}</td>
-                    <td className="px-2">{b.errorRows > 0 ? <span className="text-[var(--amber)]">{b.errorRows}</span> : "0"}</td>
+                    <td className="px-2 text-[var(--teal-dark)]">
+                      {b.validRows}
+                    </td>
+                    <td className="px-2">
+                      {b.errorRows > 0 ? (
+                        <span className="text-[var(--amber)]">
+                          {b.errorRows}
+                        </span>
+                      ) : (
+                        "0"
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

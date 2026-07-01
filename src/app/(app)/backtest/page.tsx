@@ -14,7 +14,7 @@ export default async function BacktestPage() {
       opportunity: { include: { contextTags: true } },
       contextTags: true,
     },
-    orderBy: { openedAt: "desc" },
+    orderBy: [{ openedAt: "desc" }, { createdAt: "asc" }],
   });
 
   return <BacktestView trades={JSON.parse(JSON.stringify(trades))} />;
