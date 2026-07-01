@@ -5,6 +5,7 @@ import { useTheme } from "next-themes";
 import { Toaster } from "sonner";
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
+import { useI18n } from "./i18n-provider";
 
 export function AppShell({
   children,
@@ -15,10 +16,11 @@ export function AppShell({
 }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { resolvedTheme } = useTheme();
+  const { dir } = useI18n();
 
   return (
     <main className="min-h-screen overflow-hidden bg-background">
-      <Toaster position="top-right" richColors theme={resolvedTheme === "dark" ? "dark" : "light"} />
+      <Toaster position={dir === "rtl" ? "top-left" : "top-right"} richColors theme={resolvedTheme === "dark" ? "dark" : "light"} />
       <div className="grid min-h-screen grid-cols-[auto_minmax(0,1fr)] max-[980px]:grid-cols-1">
         <Sidebar mobileOpen={mobileNavOpen} setMobileOpen={setMobileNavOpen} />
         <section className="min-w-0">

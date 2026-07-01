@@ -55,18 +55,57 @@
   --color-amber: var(--amber);
   --color-red: var(--red);
   --color-nav: var(--nav);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-sans-base);
   --font-mono: var(--font-geist-mono);
-  --font-display: var(--font-geist-sans);
+  --font-display: var(--font-sans-base);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family:
+    var(--font-sans-base),
+    var(--font-sans-persian),
+    var(--font-sans-arabic),
+    var(--font-sans-hebrew),
+    var(--font-sans-devanagari),
+    var(--font-sans-sc),
+    var(--font-sans-jp),
+    var(--font-sans-kr),
+    "Segoe UI",
+    sans-serif;
   background-image:
     radial-gradient(circle at 1px 1px, var(--grid-line) 1px, transparent 0);
   background-size: 22px 22px;
+}
+
+:lang(fa),
+:lang(ur) {
+  --font-display: var(--font-sans-persian);
+}
+
+:lang(ar) {
+  --font-display: var(--font-sans-arabic);
+}
+
+:lang(he) {
+  --font-display: var(--font-sans-hebrew);
+}
+
+:lang(hi) {
+  --font-display: var(--font-sans-devanagari);
+}
+
+:lang(zh) {
+  --font-display: var(--font-sans-sc);
+}
+
+:lang(ja) {
+  --font-display: var(--font-sans-jp);
+}
+
+:lang(ko) {
+  --font-display: var(--font-sans-kr);
 }
 
 button,
@@ -106,7 +145,7 @@ textarea {
 .num {
   font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
 .eyebrow {
@@ -115,6 +154,88 @@ textarea {
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+}
+
+[dir="rtl"] .eyebrow {
+  letter-spacing: 0;
+}
+
+[dir="rtl"] .text-left {
+  text-align: right;
+}
+
+[dir="rtl"] .text-right {
+  text-align: left;
+}
+
+[dir="rtl"] .left-0 {
+  left: auto;
+  right: 0;
+}
+
+[dir="rtl"] .right-0 {
+  right: auto;
+  left: 0;
+}
+
+[dir="rtl"] .right-2\.5 {
+  right: auto;
+  left: 0.625rem;
+}
+
+[dir="rtl"] .right-3 {
+  right: auto;
+  left: 0.75rem;
+}
+
+[dir="rtl"] .pl-2\.5 {
+  padding-left: 0;
+  padding-right: 0.625rem;
+}
+
+[dir="rtl"] .pl-3 {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+[dir="rtl"] .pl-8 {
+  padding-left: 0.75rem;
+  padding-right: 2rem;
+}
+
+[dir="rtl"] .pr-8 {
+  padding-right: 0.75rem;
+  padding-left: 2rem;
+}
+
+[dir="rtl"] .before\:left-0::before {
+  left: auto;
+  right: 0;
+}
+
+[dir="rtl"] .ml-1 {
+  margin-left: 0;
+  margin-right: 0.25rem;
+}
+
+[dir="rtl"] .ml-4 {
+  margin-left: 0;
+  margin-right: 1rem;
+}
+
+[dir="rtl"] .ml-auto {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+[dir="rtl"] .max-\[980px\]\:left-0 {
+  left: auto;
+  right: 0;
+}
+
+[dir="rtl"] .max-\[980px\]\:-translate-x-full {
+  --tw-translate-x: 100%;
+  translate: var(--tw-translate-x) var(--tw-translate-y);
 }
 
 /* ── Motion ─────────────────────────────────────────────────────────────── */

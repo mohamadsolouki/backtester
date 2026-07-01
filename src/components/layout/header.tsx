@@ -13,6 +13,7 @@ import {
   Sun,
 } from "lucide-react";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { updateUserSettings } from "@/app/actions/settings";
 import { cn } from "@/lib/utils";
 import { parseDateRangeSearchParams, type DateRangePreset, type ResolvedDateRange } from "@/lib/date-range";
@@ -135,6 +136,7 @@ export function Header({
         </div>
       </div>
       <div className="flex-1" />
+      <LanguageSwitcher />
       <button
         onClick={() => {
           const next = resolvedTheme === "dark" ? "light" : "dark";

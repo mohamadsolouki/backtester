@@ -1,6 +1,11 @@
+import { LanguageSwitcher } from "@/components/layout/language-switcher";
+
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#061713] p-4">
+      <div className="absolute right-4 top-4 z-10">
+        <LanguageSwitcher compact />
+      </div>
       <div
         className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full opacity-[0.16] blur-[100px]"
         style={{ background: "radial-gradient(circle, #22c9bc 0%, transparent 70%)" }}
