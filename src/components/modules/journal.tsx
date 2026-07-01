@@ -177,6 +177,7 @@ export function JournalView({
   return (
     <ModuleShell
       title="Trade Journal"
+      eyebrow="Execute"
       description="Record, review, and learn from every trade. Add trades manually or import from MetaTrader."
       actions={
         <ActionButton icon={Plus} onClick={() => setShowForm(true)}>
@@ -289,7 +290,7 @@ export function JournalView({
                     onClick={() => setViewingTrade(t)}
                     className="cursor-pointer border-b border-[var(--line)] hover:bg-[var(--panel-soft)]"
                   >
-                    {visibleColumns.includes("date") && <td className="h-10 px-2">{new Date(t.openedAt).toLocaleDateString()}</td>}
+                    {visibleColumns.includes("date") && <td className="num h-10 px-2 text-[var(--muted)]">{new Date(t.openedAt).toLocaleDateString()}</td>}
                     {visibleColumns.includes("ticker") && <td className="px-2 font-semibold">{t.ticker}</td>}
                     {visibleColumns.includes("direction") && (
                       <td className="px-2">
@@ -298,17 +299,17 @@ export function JournalView({
                         </span>
                       </td>
                     )}
-                    {visibleColumns.includes("session") && <td className="px-2">{t.sessionName.replace(/_/g, " ")}</td>}
-                    {visibleColumns.includes("entry") && <td className="px-2">{Number(t.entryPrice).toFixed(2)}</td>}
-                    {visibleColumns.includes("exit") && <td className="px-2">{t.exitPrice ? Number(t.exitPrice).toFixed(2) : "—"}</td>}
-                    {visibleColumns.includes("size") && <td className="px-2">{t.quantity ?? "—"}</td>}
+                    {visibleColumns.includes("session") && <td className="px-2 text-[var(--muted)]">{t.sessionName.replace(/_/g, " ")}</td>}
+                    {visibleColumns.includes("entry") && <td className="num px-2">{Number(t.entryPrice).toFixed(2)}</td>}
+                    {visibleColumns.includes("exit") && <td className="num px-2">{t.exitPrice ? Number(t.exitPrice).toFixed(2) : "—"}</td>}
+                    {visibleColumns.includes("size") && <td className="num px-2">{t.quantity ?? "—"}</td>}
                     {visibleColumns.includes("r") && (
-                      <td className={cn("px-2 font-semibold", Number(t.rMultiple) >= 0 ? "text-[var(--teal-dark)]" : "text-[var(--red)]")}>
+                      <td className={cn("num px-2 font-semibold", Number(t.rMultiple) >= 0 ? "text-[var(--teal-dark)]" : "text-[var(--red)]")}>
                         {Number(t.rMultiple).toFixed(1)}R
                       </td>
                     )}
-                    {visibleColumns.includes("pnl") && <td className="px-2">{formatCurrency(Number(t.pnl))}</td>}
-                    {visibleColumns.includes("fees") && <td className="px-2">{formatCurrency(Number(t.fees))}</td>}
+                    {visibleColumns.includes("pnl") && <td className="num px-2">{formatCurrency(Number(t.pnl))}</td>}
+                    {visibleColumns.includes("fees") && <td className="num px-2">{formatCurrency(Number(t.fees))}</td>}
                     {visibleColumns.includes("status") && <td className="px-2"><StatusPill status={t.status} /></td>}
                     {visibleColumns.includes("rules") && (
                       <td className="px-2">{t.ruleBreaks.length > 0 ? <StatusPill status="SKIPPED" label={String(t.ruleBreaks.length)} /> : "—"}</td>
@@ -546,16 +547,16 @@ function TradeModal({
   ];
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" aria-modal>
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onClose} />
-      <div className="relative flex max-h-[90vh] w-[680px] max-w-full flex-col overflow-hidden rounded-lg border border-[var(--line)] bg-[var(--panel)] shadow-2xl">
+    <div className="animate-fade-in fixed inset-0 z-[60] flex items-center justify-center p-4" aria-modal>
+      <div className="absolute inset-0 bg-black/45 backdrop-blur-[3px]" onClick={onClose} />
+      <div className="animate-scale-in relative flex max-h-[90vh] w-[680px] max-w-full flex-col overflow-hidden rounded-lg border border-[var(--line)] bg-[var(--panel)] shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[var(--line)] px-6 py-4">
           <div>
-            <h2 className="text-[16px] font-bold text-[var(--ink)]">
-              {trade.ticker} <span className={cn("ml-1 text-[13px] font-semibold", trade.direction === "LONG" ? "text-[var(--teal-dark)]" : "text-[var(--red)]")}>{trade.direction}</span>
+            <h2 className="font-display font-semibold text-[19px] text-[var(--ink)]">
+              {trade.ticker} <span className={cn("num ml-1 text-[13px] font-semibold", trade.direction === "LONG" ? "text-[var(--teal-dark)]" : "text-[var(--red)]")}>{trade.direction}</span>
             </h2>
-            <p className="mt-0.5 text-[12px] text-[var(--muted)]">
+            <p className="num mt-0.5 text-[12px] text-[var(--muted)]">
               {new Date(trade.openedAt).toLocaleString()} · {formatCurrency(Number(trade.pnl))} · {Number(trade.rMultiple).toFixed(2)}R
             </p>
           </div>

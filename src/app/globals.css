@@ -3,33 +3,43 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f5f7f4;
+  --background: #f3f1ea;
   --foreground: #17211f;
-  --panel: #fbfcfa;
-  --panel-soft: #f0f4f1;
-  --ink: #10201f;
-  --muted: #66746f;
-  --line: #dbe2df;
+  --panel: #fdfcf8;
+  --panel-soft: #ece8dc;
+  --ink: #14201d;
+  --muted: #6b6558;
+  --line: #ddd7c6;
+  --line-soft: #e8e3d3;
   --teal: #0f9f95;
   --teal-dark: #08746f;
-  --amber: #d88912;
-  --red: #d94848;
-  --nav: #071b20;
+  --teal-soft: rgba(15, 159, 149, 0.1);
+  --amber: #b9740e;
+  --red: #c33f3f;
+  --nav: #0a1e1c;
+  --nav-soft: rgba(255, 255, 255, 0.06);
+  --grid-line: rgba(20, 32, 29, 0.05);
+  --shadow-color: 30, 26, 14;
 }
 
 .dark {
-  --background: #0b1716;
+  --background: #0a1413;
   --foreground: #e9f1ef;
-  --panel: #102220;
-  --panel-soft: #152a28;
+  --panel: #0f1e1c;
+  --panel-soft: #142925;
   --ink: #eef5f3;
-  --muted: #8ba29c;
-  --line: #1f3633;
-  --teal: #1fc2b6;
-  --teal-dark: #29d5ca;
+  --muted: #87968f;
+  --line: #1e332f;
+  --line-soft: #172925;
+  --teal: #22c9bc;
+  --teal-dark: #34dfd2;
+  --teal-soft: rgba(34, 201, 188, 0.12);
   --amber: #e3a23a;
   --red: #ea6a6a;
-  --nav: #04100f;
+  --nav: #050e0d;
+  --nav-soft: rgba(255, 255, 255, 0.04);
+  --grid-line: rgba(255, 255, 255, 0.035);
+  --shadow-color: 0, 0, 0;
 }
 
 @theme inline {
@@ -47,12 +57,16 @@
   --color-nav: var(--nav);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-geist-sans);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  background-image:
+    radial-gradient(circle at 1px 1px, var(--grid-line) 1px, transparent 0);
+  background-size: 22px 22px;
 }
 
 button,
@@ -67,7 +81,7 @@ textarea {
 }
 
 ::selection {
-  background: rgba(15, 159, 149, 0.22);
+  background: var(--teal-soft);
 }
 
 .thin-scrollbar {
@@ -76,5 +90,90 @@ textarea {
 }
 
 .shadow-soft {
-  box-shadow: 0 18px 50px rgba(8, 27, 32, 0.08);
+  box-shadow: 0 1px 2px rgba(var(--shadow-color), 0.06), 0 18px 40px rgba(var(--shadow-color), 0.09);
+}
+
+.shadow-lift {
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 180ms cubic-bezier(0.22, 1, 0.36, 1), border-color 180ms ease;
+}
+
+.shadow-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(var(--shadow-color), 0.07), 0 24px 48px rgba(var(--shadow-color), 0.13);
+  border-color: color-mix(in srgb, var(--teal) 35%, var(--line));
+}
+
+.num {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.eyebrow {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* ── Motion ─────────────────────────────────────────────────────────────── */
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-fade-in {
+  animation: fade-in 180ms ease both;
+}
+
+.animate-scale-in {
+  animation: scale-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.stagger > * {
+  animation: fade-up 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.stagger > *:nth-child(1) { animation-delay: 0ms; }
+.stagger > *:nth-child(2) { animation-delay: 45ms; }
+.stagger > *:nth-child(3) { animation-delay: 90ms; }
+.stagger > *:nth-child(4) { animation-delay: 135ms; }
+.stagger > *:nth-child(5) { animation-delay: 180ms; }
+.stagger > *:nth-child(6) { animation-delay: 225ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up,
+  .animate-fade-in,
+  .animate-scale-in,
+  .stagger > * {
+    animation: none;
+  }
 }

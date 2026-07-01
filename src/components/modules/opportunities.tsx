@@ -61,7 +61,8 @@ export function OpportunitiesView({
 
   return (
     <ModuleShell
-      title="Opportunities"
+      title="Watchlist"
+      eyebrow="Plan"
       description="Plan, grade, and track trading opportunities before they become trades."
       actions={
         <ActionButton icon={Plus} onClick={() => setShowForm(true)}>New Opportunity</ActionButton>
@@ -124,9 +125,9 @@ export function OpportunitiesView({
                       <td className="h-10 px-2 font-semibold">{o.ticker}</td>
                       <td className="px-2">{o.setupName}</td>
                       <td className="px-2">{o.bias}</td>
-                      <td className="px-2">{o.sessionName.replace(/_/g, " ")}</td>
+                      <td className="px-2 text-[var(--muted)]">{o.sessionName.replace(/_/g, " ")}</td>
                       <td className="px-2"><StatusPill status={o.status} /></td>
-                      <td className="px-2">{o.confirmationCount}</td>
+                      <td className="num px-2">{o.confirmationCount}</td>
                       <td className="px-2"><GradeBadge grade={o.grade ?? "F"} /></td>
                     </tr>
                   ))}
@@ -271,7 +272,7 @@ function OpportunityDetail({ opp }: { opp: SerializedOpp }) {
       <Surface>
         <div className="flex items-start justify-between">
           <div>
-            <SectionTitle>{opp.ticker} — {opp.setupName}</SectionTitle>
+            <h2 className="font-display font-semibold text-[18px] text-[var(--ink)]">{opp.ticker} — {opp.setupName}</h2>
             <p className="mt-1 text-[12px] text-[var(--muted)]">{opp.primaryContext}</p>
           </div>
           <GradeBadge grade={opp.grade ?? "F"} />
@@ -299,7 +300,7 @@ function OpportunityDetail({ opp }: { opp: SerializedOpp }) {
             <div className="space-y-2 text-[13px]">
               <div className="flex justify-between"><span className="text-[var(--muted)]">Bias</span><span className="font-medium">{opp.bias}</span></div>
               <div className="flex justify-between"><span className="text-[var(--muted)]">Session</span><span>{opp.sessionName.replace(/_/g, " ")}</span></div>
-              <div className="flex justify-between"><span className="text-[var(--muted)]">Confirmations</span><span className="font-semibold">{opp.confirmationCount} / {opp.contextTags.length}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--muted)]">Confirmations</span><span className="num font-semibold">{opp.confirmationCount} / {opp.contextTags.length}</span></div>
               <div className="flex justify-between"><span className="text-[var(--muted)]">Status</span><StatusPill status={opp.status} /></div>
             </div>
             {opp.notes && <p className="mt-3 rounded-md bg-[var(--panel-soft)] p-3 text-[12px] text-[var(--ink)]">{opp.notes}</p>}
@@ -316,7 +317,7 @@ function OpportunityDetail({ opp }: { opp: SerializedOpp }) {
           <div className="mt-3">
             <div className="mb-2 flex items-center justify-between">
               <p className="text-[12px] text-[var(--muted)]">Toggle signals that are currently active in the market.</p>
-              <span className="text-[12px] font-semibold text-[var(--teal-dark)]">{opp.confirmationCount}/{opp.contextTags.length} active</span>
+              <span className="num text-[12px] font-semibold text-[var(--teal-dark)]">{opp.confirmationCount}/{opp.contextTags.length} active</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {opp.contextTags.map((tag) => (
@@ -340,7 +341,7 @@ function OpportunityDetail({ opp }: { opp: SerializedOpp }) {
                       {tag.enabled && <span className="text-[10px]">✓</span>}
                     </span>
                   </div>
-                  <p className="mt-1 text-[var(--muted)]">
+                  <p className="num mt-1 text-[var(--muted)]">
                     Weight {tag.weight > 0 ? `+${tag.weight}` : tag.weight}
                   </p>
                 </button>

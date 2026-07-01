@@ -27,6 +27,7 @@ export function PlaybookView({ playbooks }: { playbooks: SerializedPlaybook[] })
   return (
     <ModuleShell
       title="Playbook"
+      eyebrow="Plan"
       description="Setup library with conditions, entry logic, and exit rules."
       actions={<ActionButton icon={Plus} onClick={() => setShowForm(true)}>Add Setup</ActionButton>}
     >
@@ -44,7 +45,7 @@ export function PlaybookView({ playbooks }: { playbooks: SerializedPlaybook[] })
                   key={p.id}
                   onClick={() => setSelectedId(p.id)}
                   className={cn(
-                    "w-full rounded-md border p-3 text-left text-[13px] hover:bg-[var(--panel-soft)]",
+                    "shadow-lift w-full rounded-md border p-3 text-left text-[13px] hover:bg-[var(--panel-soft)]",
                     p.id === selectedId
                       ? "border-[var(--teal)]/50 bg-[var(--panel-soft)]"
                       : "border-[var(--line)]"

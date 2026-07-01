@@ -94,38 +94,44 @@ export function Header({
     : "TR";
 
   return (
-    <header className="flex h-[76px] items-center gap-6 border-b border-white/10 bg-[var(--nav)] px-4 text-white max-[760px]:h-auto max-[760px]:flex-wrap max-[760px]:py-3">
+    <header className="flex h-[76px] items-center gap-6 border-b border-white/8 bg-[var(--nav)] px-4 text-white max-[760px]:h-auto max-[760px]:flex-wrap max-[760px]:py-3">
       <button
-        className="hidden rounded-md border border-white/15 p-2 text-white/70 max-[980px]:block"
+        className="hidden rounded-md border border-white/12 p-2 text-white/70 max-[980px]:block"
         onClick={openMobileNav}
         aria-label="Open navigation"
       >
         <PanelLeftClose className="h-4 w-4" />
       </button>
       <div className="min-w-[146px]">
-        <div className="text-[12px] text-white/62">{label}</div>
+        <div className="eyebrow text-white/45">{label}</div>
         <DateRangePicker
           preset={preset}
           range={range}
           onChange={(nextPreset, nextRange) => pushParams({ preset: nextPreset, range: nextRange })}
         />
       </div>
-      <div className="h-8 w-px bg-white/14 max-[760px]:hidden" />
+      <div className="h-8 w-px bg-white/10 max-[760px]:hidden" />
       <div className="min-w-[460px] flex-1 max-[760px]:min-w-full">
-        <div className="text-[12px] text-white/62">Session</div>
-        <div className="mt-1 grid h-8 grid-cols-5 overflow-hidden rounded-md border border-white/14 bg-white/5">
-          {sessionNames.map((item) => (
-            <button
-              key={item}
-              onClick={() => toggleSession(item)}
-              className={cn(
-                "text-[12px] text-white/72 transition hover:bg-white/10",
-                activeSessions.includes(item) && "bg-[var(--teal)] text-white hover:bg-[var(--teal)]"
-              )}
-            >
-              {item}
-            </button>
-          ))}
+        <div className="eyebrow text-white/45">Session</div>
+        <div className="mt-1.5 flex h-8 gap-1">
+          {sessionNames.map((item) => {
+            const on = activeSessions.includes(item);
+            return (
+              <button
+                key={item}
+                onClick={() => toggleSession(item)}
+                className={cn(
+                  "flex flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-md border px-1 text-[11px] font-medium transition-all",
+                  on
+                    ? "border-[var(--teal-dark)]/50 bg-[var(--teal-dark)]/18 text-[var(--teal-dark)]"
+                    : "border-white/10 text-white/55 hover:border-white/20 hover:text-white/85"
+                )}
+              >
+                <span className={cn("h-[4px] w-[4px] shrink-0 rounded-full transition-colors", on ? "bg-[var(--teal-dark)]" : "bg-white/25")} />
+                {item}
+              </button>
+            );
+          })}
         </div>
       </div>
       <div className="flex-1" />
@@ -135,7 +141,7 @@ export function Header({
           setTheme(next);
           updateUserSettings({ theme: next });
         }}
-        className="rounded-full border border-white/14 p-2 text-white/74 hover:bg-white/8"
+        className="rounded-full border border-white/12 p-2 text-white/74 transition-colors hover:border-white/24 hover:bg-white/8"
         aria-label="Toggle theme"
         title="Toggle theme"
       >
@@ -145,13 +151,13 @@ export function Header({
       <Bell className="h-5 w-5 shrink-0 text-white/72" />
       <button
         onClick={() => signOut({ callbackUrl: "/login" })}
-        className="rounded-full border border-white/14 p-2 text-white/74 hover:bg-white/8"
+        className="rounded-full border border-white/12 p-2 text-white/74 transition-colors hover:border-white/24 hover:bg-white/8"
         aria-label="Sign out"
         title="Sign out"
       >
         <LogOut className="h-4 w-4" />
       </button>
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/60 text-[14px] font-semibold">
+      <div className="num flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--teal-dark)]/50 bg-[var(--teal-dark)]/12 text-[13px] font-semibold text-[var(--teal-dark)]">
         {initials}
       </div>
     </header>

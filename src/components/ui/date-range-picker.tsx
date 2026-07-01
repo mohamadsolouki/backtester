@@ -45,13 +45,13 @@ export function DateRangePicker({
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="mt-1 flex h-8 items-center gap-2 rounded-md border border-white/14 bg-white/8 px-3 text-[13px] text-white"
+        className="mt-1.5 flex h-8 items-center gap-2 rounded-md border border-white/12 bg-white/6 px-3 text-[13px] text-white transition-colors hover:border-white/24 hover:bg-white/10"
       >
         {label}
         <CalendarDays className="h-3.5 w-3.5 text-white/64" />
       </button>
       {open && (
-        <div className="absolute left-0 z-50 mt-2 flex overflow-hidden rounded-md border border-[var(--line)] bg-[var(--panel)] text-[var(--ink)] shadow-soft max-[640px]:flex-col">
+        <div className="animate-scale-in absolute left-0 z-50 mt-2 flex origin-top-left overflow-hidden rounded-lg border border-[var(--line)] bg-[var(--panel)] text-[var(--ink)] shadow-soft max-[640px]:flex-col">
           <div className="flex flex-col gap-1 border-r border-[var(--line)] p-2 max-[640px]:border-b max-[640px]:border-r-0">
             {DATE_RANGE_PRESETS.map((item) => (
               <button

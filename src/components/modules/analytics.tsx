@@ -94,19 +94,19 @@ export function AnalyticsView({ trades }: { trades: SerializedTrade[] }) {
 
   if (trades.length === 0) {
     return (
-      <ModuleShell title="Analytics" description="Performance analytics computed from your real trade data.">
+      <ModuleShell title="Analytics" eyebrow="Analyze" description="Performance analytics computed from your real trade data.">
         <EmptyState title="No trades yet" description="Add trades to your journal or import from MetaTrader to see analytics." />
       </ModuleShell>
     );
   }
 
   return (
-    <ModuleShell title="Analytics" description="Performance analytics computed from your real trade data.">
-      <div className="grid grid-cols-4 gap-2 max-[960px]:grid-cols-2 max-[560px]:grid-cols-1">
-        <Kpi label="Win Rate" value={formatPercent(stats.winRate)} />
-        <Kpi label="Profit Factor" value={stats.profitFactor.toFixed(2)} />
-        <Kpi label="Expectancy" value={`${stats.expectancy >= 0 ? "+" : ""}${stats.expectancy.toFixed(2)}R`} />
-        <Kpi label="Total P&L" value={formatCurrency(stats.totalPnl)} />
+    <ModuleShell title="Analytics" eyebrow="Analyze" description="Performance analytics computed from your real trade data.">
+      <div className="stagger grid grid-cols-4 gap-2 max-[960px]:grid-cols-2 max-[560px]:grid-cols-1">
+        <Kpi label="Win Rate" value={formatPercent(stats.winRate)} accent={stats.winRate >= 0.5 ? "up" : "down"} />
+        <Kpi label="Profit Factor" value={stats.profitFactor.toFixed(2)} accent={stats.profitFactor >= 1 ? "up" : "down"} />
+        <Kpi label="Expectancy" value={`${stats.expectancy >= 0 ? "+" : ""}${stats.expectancy.toFixed(2)}R`} accent={stats.expectancy >= 0 ? "up" : "down"} />
+        <Kpi label="Total P&L" value={formatCurrency(stats.totalPnl)} accent={stats.totalPnl >= 0 ? "up" : "down"} />
       </div>
 
       <div className="mt-2 grid grid-cols-[1fr_340px] gap-2 max-[1080px]:grid-cols-1">
@@ -121,7 +121,7 @@ export function AnalyticsView({ trades }: { trades: SerializedTrade[] }) {
                     <stop offset="100%" stopColor="var(--teal)" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid stroke="rgba(128,128,128,0.25)" vertical={false} />
+                <CartesianGrid stroke="var(--grid-line)" vertical={false} />
                 <XAxis dataKey="date" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip />
@@ -136,7 +136,7 @@ export function AnalyticsView({ trades }: { trades: SerializedTrade[] }) {
           <div className="mt-3 h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats.hourData}>
-                <CartesianGrid stroke="rgba(128,128,128,0.25)" vertical={false} />
+                <CartesianGrid stroke="var(--grid-line)" vertical={false} />
                 <XAxis dataKey="hour" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip />
@@ -167,9 +167,9 @@ export function AnalyticsView({ trades }: { trades: SerializedTrade[] }) {
                 {stats.sessionData.map((s) => (
                   <tr key={s.name} className="border-b border-[var(--line)]">
                     <td className="h-9 px-2 font-semibold">{s.name}</td>
-                    <td className="px-2">{s.total}</td>
-                    <td className="px-2">{formatPercent(s.winRate)}</td>
-                    <td className={cn("px-2 font-semibold", s.r >= 0 ? "text-[var(--teal-dark)]" : "text-[var(--red)]")}>{s.r.toFixed(2)}R</td>
+                    <td className="num px-2">{s.total}</td>
+                    <td className="num px-2">{formatPercent(s.winRate)}</td>
+                    <td className={cn("num px-2 font-semibold", s.r >= 0 ? "text-[var(--teal-dark)]" : "text-[var(--red)]")}>{s.r.toFixed(2)}R</td>
                   </tr>
                 ))}
               </tbody>
@@ -192,9 +192,9 @@ export function AnalyticsView({ trades }: { trades: SerializedTrade[] }) {
                 {stats.tickerData.map((t) => (
                   <tr key={t.ticker} className="border-b border-[var(--line)]">
                     <td className="h-9 px-2 font-semibold">{t.ticker}</td>
-                    <td className="px-2">{t.count}</td>
-                    <td className={cn("px-2 font-semibold", t.r >= 0 ? "text-[var(--teal-dark)]" : "text-[var(--red)]")}>{t.r.toFixed(2)}R</td>
-                    <td className="px-2">{formatCurrency(t.pnl)}</td>
+                    <td className="num px-2">{t.count}</td>
+                    <td className={cn("num px-2 font-semibold", t.r >= 0 ? "text-[var(--teal-dark)]" : "text-[var(--red)]")}>{t.r.toFixed(2)}R</td>
+                    <td className="num px-2">{formatCurrency(t.pnl)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -205,9 +205,9 @@ export function AnalyticsView({ trades }: { trades: SerializedTrade[] }) {
 
       <div className="mt-2 grid grid-cols-4 gap-2 max-[960px]:grid-cols-2">
         <Kpi label="Total Trades" value={String(stats.totalTrades)} />
-        <Kpi label="Avg R" value={`${stats.avgR.toFixed(2)}R`} />
-        <Kpi label="Max Drawdown" value={formatCurrency(stats.maxDrawdown)} />
-        <Kpi label="Rule Breaks" value={String(stats.ruleBreaks)} />
+        <Kpi label="Avg R" value={`${stats.avgR.toFixed(2)}R`} accent={stats.avgR >= 0 ? "up" : "down"} />
+        <Kpi label="Max Drawdown" value={formatCurrency(stats.maxDrawdown)} accent="down" />
+        <Kpi label="Rule Breaks" value={String(stats.ruleBreaks)} accent={stats.ruleBreaks > 0 ? "down" : "neutral"} />
       </div>
     </ModuleShell>
   );

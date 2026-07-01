@@ -73,6 +73,7 @@ export function SopView({ documents }: { documents: SerializedDoc[] }) {
   return (
     <ModuleShell
       title="Routine"
+      eyebrow="Execute"
       description="Versioned standard operating procedures for daily trading discipline."
       actions={documents.length === 0 ? <ActionButton icon={Plus} onClick={() => setShowCreate(true)}>Create SOP</ActionButton> : undefined}
     >
@@ -154,7 +155,7 @@ function SopDocumentCard({ doc }: { doc: SerializedDoc }) {
     <Surface>
       <div className="flex items-center justify-between">
         <SectionTitle>{doc.title}</SectionTitle>
-        <span className="text-[12px] font-semibold text-[var(--teal-dark)]">
+        <span className="num text-[12px] font-semibold text-[var(--teal-dark)]">
           v{doc.versions[0]?.version ?? "1.0.0"} · {totalChecked}/{totalItems} today
         </span>
       </div>

@@ -77,6 +77,7 @@ export function SettingsView({
   return (
     <ModuleShell
       title="Settings"
+      eyebrow="System"
       description="Risk controls, vocabulary, and platform preferences."
       actions={
         <Segmented value={tab} options={["General", "Vocabulary"]} onChange={(v) => setTab(v as typeof tab)} />

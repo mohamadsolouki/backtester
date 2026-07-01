@@ -43,6 +43,7 @@ export function BacktestView({ trades }: { trades: SerializedTrade[] }) {
   return (
     <ModuleShell
       title="Edge Lab"
+      eyebrow="Analyze"
       description="Context performance computed from trades linked to graded opportunities."
       actions={
         <Link
@@ -62,16 +63,16 @@ export function BacktestView({ trades }: { trades: SerializedTrade[] }) {
       ) : (
         <Surface>
           <SectionTitle>Context Performance Matrix</SectionTitle>
-          <div className="mt-3 grid grid-cols-2 gap-2 max-[768px]:grid-cols-1">
+          <div className="stagger mt-3 grid grid-cols-2 gap-2 max-[768px]:grid-cols-1">
             {contextMatrix.map((row) => (
-              <div key={row.tag} className="rounded-md border border-[var(--line)] p-3 text-[12px]">
+              <div key={row.tag} className="shadow-lift rounded-md border border-[var(--line)] p-3 text-[12px]">
                 <div className="flex items-center justify-between font-semibold">
                   <span>{row.tag}</span>
-                  <span className={cn(row.expectancy >= 0 ? "text-[var(--teal-dark)]" : "text-[var(--red)]")}>
+                  <span className={cn("num", row.expectancy >= 0 ? "text-[var(--teal-dark)]" : "text-[var(--red)]")}>
                     {row.expectancy >= 0 ? "+" : ""}{row.expectancy.toFixed(2)}R
                   </span>
                 </div>
-                <div className="mt-2 grid grid-cols-2 gap-2 text-[var(--muted)]">
+                <div className="num mt-2 grid grid-cols-2 gap-2 text-[var(--muted)]">
                   <span>Win Rate {formatPercent(row.winRate)}</span>
                   <span>{row.samples < 20 ? "⚠ " : ""}Samples {row.samples}</span>
                 </div>

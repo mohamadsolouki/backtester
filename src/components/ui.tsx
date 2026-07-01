@@ -6,11 +6,20 @@ import { cn } from "@/lib/utils";
 import { gradeTone } from "@/lib/context-engine";
 import type { Grade } from "@/lib/domain";
 
-export function Surface({ children, className }: { children: ReactNode; className?: string }) {
+export function Surface({
+  children,
+  className,
+  interactive,
+}: {
+  children: ReactNode;
+  className?: string;
+  interactive?: boolean;
+}) {
   return (
     <section
       className={cn(
-        "rounded-md border border-[var(--line)] bg-[var(--panel)] p-3 text-[var(--ink)] shadow-soft",
+        "rounded-lg border border-[var(--line)] bg-[var(--panel)] p-3 text-[var(--ink)] shadow-soft",
+        interactive && "shadow-lift cursor-pointer",
         className
       )}
     >
@@ -19,27 +28,38 @@ export function Surface({ children, className }: { children: ReactNode; classNam
   );
 }
 
-export function SectionTitle({ children }: { children: ReactNode }) {
-  return <h2 className="text-[14px] font-semibold uppercase tracking-[0.02em]">{children}</h2>;
+export function SectionTitle({ children, eyebrow }: { children: ReactNode; eyebrow?: string }) {
+  return (
+    <div className="flex items-baseline gap-2">
+      {eyebrow && <span className="eyebrow text-[var(--teal-dark)]">{eyebrow}</span>}
+      <h2 className="relative pl-2.5 text-[13px] font-semibold uppercase tracking-[0.04em] before:absolute before:left-0 before:top-[3px] before:h-[11px] before:w-[2.5px] before:rounded-full before:bg-[var(--teal)] before:content-['']">
+        {children}
+      </h2>
+    </div>
+  );
 }
 
 export function ModuleShell({
   title,
   description,
+  eyebrow,
   actions,
   children,
 }: {
   title: string;
   description: string;
+  eyebrow?: string;
   actions?: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-[var(--line)] bg-[var(--panel)] p-4 text-[var(--ink)] shadow-soft">
+    <div className="animate-fade-up space-y-2.5">
+      <div className="relative flex flex-wrap items-center justify-between gap-3 overflow-hidden rounded-lg border border-[var(--line)] bg-[var(--panel)] p-5 text-[var(--ink)] shadow-soft">
+        <div className="absolute inset-y-0 left-0 w-[3px] bg-gradient-to-b from-[var(--teal)] to-[var(--teal-dark)]" />
         <div>
-          <h1 className="text-[20px] font-semibold tracking-[-0.01em]">{title}</h1>
-          <p className="mt-1 max-w-3xl text-[13px] text-[var(--muted)]">{description}</p>
+          {eyebrow && <div className="eyebrow mb-1.5 text-[var(--teal-dark)]">{eyebrow}</div>}
+          <h1 className="font-display text-[26px] font-semibold tracking-[-0.01em] text-[var(--ink)]">{title}</h1>
+          <p className="mt-1.5 max-w-3xl text-[13px] leading-relaxed text-[var(--muted)]">{description}</p>
         </div>
         {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
       </div>
@@ -66,7 +86,7 @@ export function ActionButton({
       type={type ?? "button"}
       onClick={onClick}
       disabled={disabled}
-      className="flex h-9 items-center gap-2 rounded-md border border-[var(--teal)]/40 bg-[var(--panel)] px-3 text-[12px] font-semibold text-[var(--teal-dark)] hover:bg-[var(--panel-soft)] disabled:opacity-50"
+      className="flex h-9 items-center gap-2 rounded-md border border-[var(--teal)]/40 bg-[var(--panel)] px-3 text-[12px] font-semibold text-[var(--teal-dark)] transition-all hover:border-[var(--teal)]/70 hover:bg-[var(--teal-soft)] active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
     >
       <Icon className="h-3.5 w-3.5" />
       {children}
@@ -74,24 +94,69 @@ export function ActionButton({
   );
 }
 
+export function PrimaryButton({
+  onClick,
+  children,
+  type,
+  disabled,
+}: {
+  onClick?: () => void;
+  children: ReactNode;
+  type?: "button" | "submit";
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type={type ?? "button"}
+      onClick={onClick}
+      disabled={disabled}
+      className="h-9 rounded-md bg-[var(--teal)] px-5 text-[12px] font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,0.08)] transition-all hover:bg-[var(--teal-dark)] active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
+    >
+      {children}
+    </button>
+  );
+}
+
+const PILL_STYLES: Record<string, string> = {
+  TAKEN: "border-[var(--teal)]/35 bg-[var(--teal-soft)] text-[var(--teal-dark)]",
+  Taken: "border-[var(--teal)]/35 bg-[var(--teal-soft)] text-[var(--teal-dark)]",
+  SKIPPED: "border-[var(--amber)]/35 bg-[var(--amber)]/10 text-[var(--amber)]",
+  Skipped: "border-[var(--amber)]/35 bg-[var(--amber)]/10 text-[var(--amber)]",
+  NOT_FORMED: "border-[var(--line)] bg-[var(--panel-soft)] text-[var(--muted)]",
+  "Not Formed": "border-[var(--line)] bg-[var(--panel-soft)] text-[var(--muted)]",
+  WATCHING: "border-[#8fa6e6]/40 bg-[#8fa6e6]/12 text-[#435da8]",
+  Watching: "border-[#8fa6e6]/40 bg-[#8fa6e6]/12 text-[#435da8]",
+  PLANNED: "border-[#8fa6e6]/40 bg-[#8fa6e6]/12 text-[#435da8]",
+  OPEN: "border-[#8fa6e6]/40 bg-[#8fa6e6]/12 text-[#435da8]",
+  CLOSED: "border-[var(--teal)]/35 bg-[var(--teal-soft)] text-[var(--teal-dark)]",
+  SCRATCH: "border-[var(--line)] bg-[var(--panel-soft)] text-[var(--muted)]",
+};
+
+const DOT_STYLES: Record<string, string> = {
+  TAKEN: "bg-[var(--teal)]",
+  Taken: "bg-[var(--teal)]",
+  SKIPPED: "bg-[var(--amber)]",
+  Skipped: "bg-[var(--amber)]",
+  NOT_FORMED: "bg-[var(--muted)]",
+  "Not Formed": "bg-[var(--muted)]",
+  WATCHING: "bg-[#435da8]",
+  Watching: "bg-[#435da8]",
+  PLANNED: "bg-[#435da8]",
+  OPEN: "bg-[#435da8]",
+  CLOSED: "bg-[var(--teal)]",
+  SCRATCH: "bg-[var(--muted)]",
+};
+
 export function StatusPill({ status, label }: { status: string; label?: string }) {
-  const styles: Record<string, string> = {
-    TAKEN: "border-[#89ccc6] bg-[#effaf8] text-[#08746f]",
-    Taken: "border-[#89ccc6] bg-[#effaf8] text-[#08746f]",
-    SKIPPED: "border-[#edc474] bg-[#fff7e8] text-[#b86e04]",
-    Skipped: "border-[#edc474] bg-[#fff7e8] text-[#b86e04]",
-    NOT_FORMED: "border-[#cfd8d4] bg-[#f4f6f5] text-[#66746f]",
-    "Not Formed": "border-[#cfd8d4] bg-[#f4f6f5] text-[#66746f]",
-    WATCHING: "border-[#b8c9f3] bg-[#eef3ff] text-[#435da8]",
-    Watching: "border-[#b8c9f3] bg-[#eef3ff] text-[#435da8]",
-    PLANNED: "border-[#b8c9f3] bg-[#eef3ff] text-[#435da8]",
-    OPEN: "border-[#b8c9f3] bg-[#eef3ff] text-[#435da8]",
-    CLOSED: "border-[#89ccc6] bg-[#effaf8] text-[#08746f]",
-    SCRATCH: "border-[#cfd8d4] bg-[#f4f6f5] text-[#66746f]",
-  };
   const displayLabel = label ?? status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   return (
-    <span className={cn("rounded border px-2 py-1 text-[11px] font-medium", styles[status] ?? styles.WATCHING)}>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-[3px] text-[11px] font-medium",
+        PILL_STYLES[status] ?? PILL_STYLES.WATCHING
+      )}
+    >
+      <span className={cn("h-[5px] w-[5px] shrink-0 rounded-full", DOT_STYLES[status] ?? DOT_STYLES.WATCHING)} />
       {displayLabel}
     </span>
   );
@@ -99,17 +164,20 @@ export function StatusPill({ status, label }: { status: string; label?: string }
 
 export function GradeBadge({ grade }: { grade: string }) {
   return (
-    <span className={cn("rounded border px-2 py-1 text-[12px] font-semibold", gradeTone(grade as Grade))}>
+    <span className={cn("num rounded-md border px-2 py-1 text-[12px] font-semibold", gradeTone(grade as Grade))}>
       {grade}
     </span>
   );
 }
 
-export function Kpi({ label, value }: { label: string; value: string }) {
+export function Kpi({ label, value, accent }: { label: string; value: string; accent?: "up" | "down" | "neutral" }) {
+  const accentColor =
+    accent === "up" ? "var(--teal)" : accent === "down" ? "var(--red)" : "var(--line)";
   return (
-    <Surface>
-      <div className="text-[12px] text-[var(--muted)]">{label}</div>
-      <div className="mt-1 text-[22px] font-semibold tracking-[-0.02em]">{value}</div>
+    <Surface className="relative overflow-hidden">
+      <div className="absolute inset-x-0 top-0 h-[2.5px]" style={{ background: accentColor }} />
+      <div className="eyebrow text-[var(--muted)]">{label}</div>
+      <div className="num mt-1.5 text-[24px] font-semibold tracking-[-0.02em] text-[var(--ink)]">{value}</div>
     </Surface>
   );
 }
@@ -124,16 +192,16 @@ export function Segmented({
   onChange: (value: string) => void;
 }) {
   return (
-    <div className="flex h-8 overflow-hidden rounded-md border border-[var(--line)]">
+    <div className="flex h-8 overflow-hidden rounded-md border border-[var(--line)] bg-[var(--panel-soft)] p-0.5">
       {options.map((option) => (
         <button
           key={option}
           onClick={() => onChange(option)}
           className={cn(
-            "px-3 text-[12px] font-medium",
+            "rounded px-3 text-[12px] font-medium transition-all",
             value === option
-              ? "bg-[var(--teal)] text-white"
-              : "bg-[var(--panel)] text-[var(--ink)] hover:bg-[var(--panel-soft)]"
+              ? "bg-[var(--teal)] text-white shadow-sm"
+              : "text-[var(--muted)] hover:text-[var(--ink)]"
           )}
         >
           {option}
@@ -147,7 +215,7 @@ export function KeyValue({ label, value }: { label: string; value: string }) {
   return (
     <div className="grid grid-cols-[135px_1fr] text-[13px]">
       <span className="text-[var(--muted)]">{label}</span>
-      <span className="font-medium text-[var(--ink)]">{value}</span>
+      <span className="num font-medium text-[var(--ink)]">{value}</span>
     </div>
   );
 }
@@ -156,7 +224,7 @@ export function Checkbox({ checked }: { checked: boolean }) {
   return (
     <span
       className={cn(
-        "flex h-4 w-4 shrink-0 items-center justify-center rounded border",
+        "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors",
         checked ? "border-[var(--teal)] bg-[var(--teal)] text-white" : "border-[var(--line)] bg-[var(--panel)]"
       )}
     >
@@ -175,9 +243,11 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex min-h-56 flex-col items-center justify-center rounded-md border border-dashed border-[var(--line)] p-8 text-center">
-      <SlidersHorizontal className="h-8 w-8 text-[var(--teal)]" />
-      <div className="mt-3 font-semibold">{title}</div>
+    <div className="flex min-h-56 flex-col items-center justify-center rounded-lg border border-dashed border-[var(--line)] bg-[var(--panel-soft)]/40 p-8 text-center">
+      <div className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--teal)]/30 bg-[var(--teal-soft)]">
+        <SlidersHorizontal className="h-[18px] w-[18px] text-[var(--teal-dark)]" />
+      </div>
+      <div className="mt-3 font-display font-semibold text-[16px] text-[var(--ink)]">{title}</div>
       <p className="mt-1 max-w-md text-[13px] text-[var(--muted)]">{description}</p>
       {action && <div className="mt-4">{action}</div>}
     </div>
@@ -201,14 +271,14 @@ export function TextField({
 }) {
   return (
     <label>
-      <span className="text-[12px] text-[var(--muted)]">{label}</span>
+      <span className="eyebrow text-[var(--muted)]">{label}</span>
       <input
         type={type ?? "text"}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         required={required}
-        className="mt-1 h-9 w-full rounded-md border border-[var(--line)] bg-[var(--panel)] px-3 text-[var(--ink)] outline-none focus:border-[var(--teal)]"
+        className="mt-1.5 h-9 w-full rounded-md border border-[var(--line)] bg-[var(--panel)] px-3 text-[var(--ink)] outline-none transition-colors focus:border-[var(--teal)] focus:ring-2 focus:ring-[var(--teal-soft)]"
       />
     </label>
   );
@@ -227,13 +297,13 @@ export function NumberField({
 }) {
   return (
     <label>
-      <span className="text-[12px] text-[var(--muted)]">{label}</span>
+      <span className="eyebrow text-[var(--muted)]">{label}</span>
       <input
         type="number"
         value={value}
         step={step}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="mt-1 h-9 w-full rounded-md border border-[var(--line)] bg-[var(--panel)] px-3 text-[var(--ink)] outline-none focus:border-[var(--teal)]"
+        className="num mt-1.5 h-9 w-full rounded-md border border-[var(--line)] bg-[var(--panel)] px-3 text-[var(--ink)] outline-none transition-colors focus:border-[var(--teal)] focus:ring-2 focus:ring-[var(--teal-soft)]"
       />
     </label>
   );

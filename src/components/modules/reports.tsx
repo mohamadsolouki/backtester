@@ -67,6 +67,7 @@ export function ReportsView({ trades }: { trades: SerializedTrade[] }) {
   return (
     <ModuleShell
       title="Reports"
+      eyebrow="Analyze"
       description="Daily, weekly, and monthly performance summaries from your actual trade data."
       actions={<ActionButton icon={Download} onClick={exportReport}>Export Report</ActionButton>}
     >
@@ -80,15 +81,15 @@ export function ReportsView({ trades }: { trades: SerializedTrade[] }) {
           <EmptyState title="No trades in this period" description="Trades you log or import will appear here once they fall within the selected period." />
         ) : (
           <>
-            <div className="mt-4 grid grid-cols-4 gap-2 max-[900px]:grid-cols-2 max-[560px]:grid-cols-1">
-              <Kpi label="Net PnL" value={formatCurrency(stats.pnl)} />
-              <Kpi label="Expectancy" value={`${stats.expectancy >= 0 ? "+" : ""}${stats.expectancy.toFixed(2)}R`} />
+            <div className="stagger mt-4 grid grid-cols-4 gap-2 max-[900px]:grid-cols-2 max-[560px]:grid-cols-1">
+              <Kpi label="Net PnL" value={formatCurrency(stats.pnl)} accent={stats.pnl >= 0 ? "up" : "down"} />
+              <Kpi label="Expectancy" value={`${stats.expectancy >= 0 ? "+" : ""}${stats.expectancy.toFixed(2)}R`} accent={stats.expectancy >= 0 ? "up" : "down"} />
               <Kpi label="Trades" value={String(periodTrades.length)} />
-              <Kpi label="Rule Breaks" value={String(stats.ruleBreaks)} />
+              <Kpi label="Rule Breaks" value={String(stats.ruleBreaks)} accent={stats.ruleBreaks > 0 ? "down" : "neutral"} />
             </div>
             <div className="mt-4 rounded-md border border-[var(--line)] bg-[var(--panel-soft)] p-4 text-[13px] leading-6 text-[var(--ink)]">
-              <strong>Summary:</strong> {periodTrades.length} trade{periodTrades.length === 1 ? "" : "s"} this {period.toLowerCase()} period,
-              most traded ticker was <strong>{stats.bestTicker}</strong>. Net result: {formatCurrency(stats.pnl)}{" "}
+              <strong className="font-display font-semibold">Summary.</strong> {periodTrades.length} trade{periodTrades.length === 1 ? "" : "s"} this {period.toLowerCase()} period,
+              most traded ticker was <strong>{stats.bestTicker}</strong>. Net result: <span className="num">{formatCurrency(stats.pnl)}</span>{" "}
               with {stats.ruleBreaks} rule break{stats.ruleBreaks === 1 ? "" : "s"}.
             </div>
           </>

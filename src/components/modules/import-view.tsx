@@ -162,12 +162,13 @@ export function ImportView({ batches }: { batches: SerializedBatch[] }) {
   return (
     <ModuleShell
       title="Import Trades"
+      eyebrow="System"
       description="Import trade history from MetaTrader (MT4/MT5), CSV, or XLSX files."
     >
       <Surface>
         <SectionTitle>Upload File</SectionTitle>
         <div className="mt-3">
-          <label className="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed border-[var(--line)] p-6 text-center hover:border-[var(--teal)] hover:bg-[var(--panel-soft)]">
+          <label className="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-[var(--line)] p-6 text-center transition-all hover:border-[var(--teal)] hover:bg-[var(--teal-soft)]">
             <Upload className="h-8 w-8 text-[var(--teal)]" />
             <div className="mt-2 text-[14px] font-semibold">Drop file or click to browse</div>
             <p className="mt-1 text-[12px] text-[var(--muted)]">

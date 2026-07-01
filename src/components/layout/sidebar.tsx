@@ -104,25 +104,23 @@ export function Sidebar({
       )}
       <aside
         className={cn(
-          "z-40 flex min-h-screen flex-col border-r border-white/10 bg-[var(--nav)] text-white transition-[width] max-[980px]:fixed max-[980px]:inset-y-0 max-[980px]:left-0 max-[980px]:w-[230px] max-[980px]:transition-transform",
-          collapsed ? "w-[68px]" : "w-[176px]",
-          !mobileOpen && "max-[980px]:-translate-x-full"
-        )}
+          "relative z-40 flex min-h-screen flex-col overflow-hidden border-r border-white/8 bg-[var(--nav)] text-white transition-[width] max-[980px]:fixed max-[980px]:inset-y-0 max-[980px]:left-0 max-[980px]:w-[240px] max-[980px]:transition-transform",
+          collapsed ? "w-[72px]" : "w-[188px]"
+        , !mobileOpen && "max-[980px]:-translate-x-full")}
       >
-        <div className="border-b border-white/10 p-5">
+        <div
+          className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full opacity-[0.14] blur-3xl"
+          style={{ background: "radial-gradient(circle, var(--teal) 0%, transparent 70%)" }}
+        />
+        <div className="relative border-b border-white/8 p-5">
           <div className="flex items-center justify-between">
-            <Link
-              href="/"
-              className={cn(
-                "text-[20px] font-semibold tracking-[-0.01em]",
-                collapsed && "max-[980px]:block hidden"
-              )}
-            >
+            <Link href="/" className="flex items-baseline gap-1.5">
               {collapsed ? (
-                <span className="text-[#18c8bd]">OS</span>
+                <span className="font-display font-semibold text-[22px] text-[var(--teal-dark)]">OS</span>
               ) : (
                 <>
-                  Trade <span className="text-[#18c8bd]">OS</span>
+                  <span className="font-display font-semibold text-[21px] tracking-[-0.01em] text-white">Trade</span>
+                  <span className="num rounded bg-[var(--teal-dark)]/20 px-1.5 py-0.5 text-[11px] font-bold text-[var(--teal-dark)]">OS</span>
                 </>
               )}
             </Link>
@@ -130,17 +128,17 @@ export function Sidebar({
               <X className="h-4 w-4" />
             </button>
           </div>
-          {!collapsed && <div className="mt-1 text-[13px] text-white/74">Trading Intelligence</div>}
+          {!collapsed && <div className="eyebrow mt-2 text-white/35">Trading Intelligence</div>}
         </div>
-        <nav className="flex-1 space-y-4 overflow-y-auto px-2 py-3 thin-scrollbar">
+        <nav className="relative flex-1 space-y-4 overflow-y-auto px-2 py-3 thin-scrollbar">
           {navGroups.map((group) => (
             <div key={group.label}>
               {!collapsed && (
-                <div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-white/40">
+                <div className="eyebrow px-3 pb-1.5 text-white/30">
                   {group.label}
                 </div>
               )}
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {group.items.map((item) => {
                   const Icon = item.icon;
                   const active = isActive(item.href);
@@ -151,11 +149,15 @@ export function Sidebar({
                       onClick={() => setMobileOpen(false)}
                       title={collapsed ? item.label : undefined}
                       className={cn(
-                        "flex h-11 w-full items-center gap-3 rounded-md px-3 text-left text-[14px] font-medium text-white/78 transition",
-                        active && "bg-white/8 text-[#29d5ca] shadow-[inset_-3px_0_0_#18c8bd]",
-                        !active && "hover:bg-white/6 hover:text-white"
+                        "relative flex h-10 w-full items-center gap-3 rounded-md px-3 text-left text-[13.5px] font-medium text-white/70 transition-all",
+                        active
+                          ? "bg-white/[0.07] text-[var(--teal-dark)]"
+                          : "hover:bg-white/5 hover:text-white"
                       )}
                     >
+                      {active && (
+                        <span className="absolute left-0 top-1/2 h-5 w-[2.5px] -translate-y-1/2 rounded-full bg-[var(--teal-dark)]" />
+                      )}
                       <Icon className="h-4 w-4 shrink-0" />
                       {!collapsed && item.label}
                     </Link>
@@ -167,7 +169,7 @@ export function Sidebar({
         </nav>
         <button
           onClick={toggleCollapsed}
-          className="m-2 hidden h-9 items-center justify-center gap-2 rounded-md border border-white/10 text-[12px] text-white/60 hover:bg-white/6 hover:text-white min-[981px]:flex"
+          className="relative m-2 hidden h-9 items-center justify-center gap-2 rounded-md border border-white/8 text-[12px] text-white/50 transition-colors hover:border-white/16 hover:bg-white/5 hover:text-white min-[981px]:flex"
         >
           {collapsed ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
           {!collapsed && "Collapse"}
