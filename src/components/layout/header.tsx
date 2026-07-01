@@ -5,18 +5,16 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useTransition } from "react";
 import { format } from "date-fns";
-import {
-  Bell,
-  LogOut,
-  Moon,
-  PanelLeftClose,
-  Sun,
-} from "lucide-react";
+import { Bell, LogOut, Moon, PanelLeftClose, Sun } from "lucide-react";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { updateUserSettings } from "@/app/actions/settings";
 import { cn } from "@/lib/utils";
-import { parseDateRangeSearchParams, type DateRangePreset, type ResolvedDateRange } from "@/lib/date-range";
+import {
+  parseDateRangeSearchParams,
+  type DateRangePreset,
+  type ResolvedDateRange,
+} from "@/lib/date-range";
 import { sessionNames, type SessionName } from "@/lib/domain";
 import { useI18n } from "@/components/layout/i18n-provider";
 
@@ -47,12 +45,18 @@ export function Header({
   const [, startTransition] = useTransition();
   const { resolvedTheme, setTheme } = useTheme();
   const { t } = useI18n();
-  const { preset, range, sessions: activeSessions } = parseDateRangeSearchParams(
-    Object.fromEntries(searchParams.entries())
-  );
+  const {
+    preset,
+    range,
+    sessions: activeSessions,
+  } = parseDateRangeSearchParams(Object.fromEntries(searchParams.entries()));
   const label = routeLabels[pathname] ?? "Trade OS";
 
-  function pushParams(next: { preset?: DateRangePreset; range?: ResolvedDateRange; sessions?: SessionName[] }) {
+  function pushParams(next: {
+    preset?: DateRangePreset;
+    range?: ResolvedDateRange;
+    sessions?: SessionName[];
+  }) {
     const params = new URLSearchParams(searchParams.toString());
     const nextPreset = next.preset ?? preset;
     const nextRange = next.range ?? range;
@@ -64,7 +68,8 @@ export function Header({
       params.set("range", nextPreset);
     }
     if (nextPreset === "custom" && (nextRange.from || nextRange.to)) {
-      if (nextRange.from) params.set("from", format(nextRange.from, "yyyy-MM-dd"));
+      if (nextRange.from)
+        params.set("from", format(nextRange.from, "yyyy-MM-dd"));
       else params.delete("from");
       if (nextRange.to) params.set("to", format(nextRange.to, "yyyy-MM-dd"));
       else params.delete("to");
@@ -97,7 +102,7 @@ export function Header({
     : "TR";
 
   return (
-    <header className="flex h-[76px] items-center gap-6 border-b border-white/8 bg-[var(--nav)] px-4 text-white max-[760px]:h-auto max-[760px]:flex-wrap max-[760px]:py-3">
+    <header className="flex h-16 items-center gap-3 border-b border-white/8 bg-[var(--nav)] px-4 text-white max-[760px]:h-auto max-[760px]:flex-wrap max-[760px]:gap-y-2 max-[760px]:py-3">
       <button
         className="hidden rounded-md border border-white/12 p-2 text-white/70 max-[980px]:block"
         onClick={openMobileNav}
@@ -105,18 +110,22 @@ export function Header({
       >
         <PanelLeftClose className="h-4 w-4 rtl:-scale-x-100" />
       </button>
-      <div className="min-w-[146px]">
-        <div className="eyebrow text-white/45">{t(label)}</div>
+      <div className="flex shrink-0 items-center gap-2">
+        <span className="eyebrow whitespace-nowrap text-white/45">
+          {t(label)}
+        </span>
         <DateRangePicker
           preset={preset}
           range={range}
-          onChange={(nextPreset, nextRange) => pushParams({ preset: nextPreset, range: nextRange })}
+          onChange={(nextPreset, nextRange) =>
+            pushParams({ preset: nextPreset, range: nextRange })
+          }
         />
       </div>
-      <div className="h-8 w-px bg-white/10 max-[760px]:hidden" />
-      <div className="min-w-[460px] flex-1 max-[760px]:min-w-full">
-        <div className="eyebrow text-white/45">{t("Session")}</div>
-        <div className="mt-1.5 flex h-8 gap-1">
+      <div className="h-6 w-px shrink-0 bg-white/10 max-[760px]:hidden" />
+      <div className="flex min-w-0 items-center gap-2 max-[760px]:w-full">
+        <span className="eyebrow shrink-0 text-white/45">{t("Session")}</span>
+        <div className="flex flex-wrap gap-1">
           {sessionNames.map((item) => {
             const on = activeSessions.includes(item);
             return (
@@ -124,13 +133,18 @@ export function Header({
                 key={item}
                 onClick={() => toggleSession(item)}
                 className={cn(
-                  "flex flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-md border px-1 text-[11px] font-medium transition-all",
+                  "flex h-7 items-center gap-1 whitespace-nowrap rounded-md border px-2 text-[10.5px] font-medium transition-all",
                   on
                     ? "border-[var(--teal-dark)]/50 bg-[var(--teal-dark)]/18 text-[var(--teal-dark)]"
-                    : "border-white/10 text-white/55 hover:border-white/20 hover:text-white/85"
+                    : "border-white/10 text-white/55 hover:border-white/20 hover:text-white/85",
                 )}
               >
-                <span className={cn("h-[4px] w-[4px] shrink-0 rounded-full transition-colors", on ? "bg-[var(--teal-dark)]" : "bg-white/25")} />
+                <span
+                  className={cn(
+                    "h-[4px] w-[4px] shrink-0 rounded-full transition-colors",
+                    on ? "bg-[var(--teal-dark)]" : "bg-white/25",
+                  )}
+                />
                 {t(item)}
               </button>
             );

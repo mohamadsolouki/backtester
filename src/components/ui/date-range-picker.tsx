@@ -47,7 +47,7 @@ export function DateRangePicker({
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="mt-1.5 flex h-8 items-center gap-2 rounded-md border border-white/12 bg-white/6 px-3 text-[13px] text-white transition-colors hover:border-white/24 hover:bg-white/10"
+        className="flex h-8 items-center gap-2 rounded-md border border-white/12 bg-white/6 px-3 text-[13px] text-white transition-colors hover:border-white/24 hover:bg-white/10"
       >
         {label}
         <CalendarDays className="h-3.5 w-3.5 text-white/64" />
@@ -62,7 +62,8 @@ export function DateRangePicker({
                 onClick={() => selectPreset(item.value)}
                 className={cn(
                   "rounded-md px-3 py-1.5 text-start text-[12px] whitespace-nowrap hover:bg-[var(--panel-soft)]",
-                  preset === item.value && "bg-[var(--panel-soft)] font-semibold text-[var(--teal-dark)]"
+                  preset === item.value &&
+                    "bg-[var(--panel-soft)] font-semibold text-[var(--teal-dark)]",
                 )}
               >
                 {t(item.label)}

@@ -107,30 +107,42 @@ export function Sidebar({
       <aside
         className={cn(
           "relative z-40 flex min-h-screen flex-col overflow-hidden border-e border-white/8 bg-[var(--nav)] text-white transition-[width] max-[980px]:fixed max-[980px]:inset-y-0 max-[980px]:start-0 max-[980px]:w-[240px] max-[980px]:transition-transform",
-          collapsed ? "w-[72px]" : "w-[188px]"
-        , !mobileOpen && "max-[980px]:-translate-x-full rtl:max-[980px]:translate-x-full")}
+          collapsed ? "w-[72px]" : "w-[188px]",
+          !mobileOpen &&
+            "max-[980px]:-translate-x-full rtl:max-[980px]:translate-x-full",
+        )}
       >
         <div
           className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full opacity-[0.14] blur-3xl"
-          style={{ background: "radial-gradient(circle, var(--teal) 0%, transparent 70%)" }}
+          style={{
+            background:
+              "radial-gradient(circle, var(--teal) 0%, transparent 70%)",
+          }}
         />
-        <div className="relative border-b border-white/8 p-5">
+        <div className="relative border-b border-white/8 px-4 py-5">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-baseline gap-1.5">
-              {collapsed ? (
-                <span className="font-display font-semibold text-[22px] text-[var(--teal-dark)]">OS</span>
-              ) : (
-                <>
-                  <span className="font-display font-semibold text-[21px] tracking-[-0.01em] text-white">Trade</span>
-                  <span className="num rounded bg-[var(--teal-dark)]/20 px-1.5 py-0.5 text-[11px] font-bold text-[var(--teal-dark)]">OS</span>
-                </>
+            <Link href="/" className="flex min-w-0 items-center gap-2">
+              <span className="num flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[var(--teal-dark)]/20 text-[11px] font-bold text-[var(--teal-dark)]">
+                OS
+              </span>
+              {!collapsed && (
+                <span className="font-display truncate font-semibold text-[19px] tracking-[-0.01em] text-white">
+                  Trade
+                </span>
               )}
             </Link>
-            <button className="min-[981px]:hidden" onClick={() => setMobileOpen(false)}>
+            <button
+              className="min-[981px]:hidden"
+              onClick={() => setMobileOpen(false)}
+            >
               <X className="h-4 w-4" />
             </button>
           </div>
-          {!collapsed && <div className="eyebrow mt-2 text-white/35">{t("Trading Intelligence")}</div>}
+          {!collapsed && (
+            <div className="eyebrow mt-2 text-white/35">
+              {t("Trading Intelligence")}
+            </div>
+          )}
         </div>
         <nav className="relative flex-1 space-y-4 overflow-y-auto px-2 py-3 thin-scrollbar">
           {navGroups.map((group) => (
@@ -154,7 +166,7 @@ export function Sidebar({
                         "relative flex h-10 w-full items-center gap-3 rounded-md px-3 text-start text-[13.5px] font-medium text-white/70 transition-all",
                         active
                           ? "bg-white/[0.07] text-[var(--teal-dark)]"
-                          : "hover:bg-white/5 hover:text-white"
+                          : "hover:bg-white/5 hover:text-white",
                       )}
                     >
                       {active && (
@@ -173,7 +185,11 @@ export function Sidebar({
           onClick={toggleCollapsed}
           className="relative m-2 hidden h-9 items-center justify-center gap-2 rounded-md border border-white/8 text-[12px] text-white/50 transition-colors hover:border-white/16 hover:bg-white/5 hover:text-white min-[981px]:flex"
         >
-          {collapsed ? <ChevronsRight className="h-4 w-4 rtl:-scale-x-100" /> : <ChevronsLeft className="h-4 w-4 rtl:-scale-x-100" />}
+          {collapsed ? (
+            <ChevronsRight className="h-4 w-4 rtl:-scale-x-100" />
+          ) : (
+            <ChevronsLeft className="h-4 w-4 rtl:-scale-x-100" />
+          )}
           {!collapsed && t("Collapse")}
         </button>
       </aside>
