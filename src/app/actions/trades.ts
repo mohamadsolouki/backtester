@@ -6,6 +6,10 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { SessionName as DbSessionName } from "@prisma/client";
 import { z } from "zod";
+import { getContextTagDefinitions } from "@/app/actions/vocab";
+
+/** Contrarian context tags count against confirmation; everything else counts for it. */
+const NEGATIVE_WEIGHT_TAGS = new Set(["Trading Range"]);
 
 async function requireUser() {
   const session = await getServerSession(authOptions);
@@ -93,7 +97,13 @@ export async function getTrades(filters?: {
       ...(filters?.status ? { status: filters.status } : {}),
       ...(filters?.sessionNames?.length ? { sessionName: { in: filters.sessionNames } } : {}),
     },
-    include: { ruleBreaks: true, review: true, screenshots: true, opportunity: true },
+    include: {
+      ruleBreaks: true,
+      review: true,
+      screenshots: true,
+      opportunity: { include: { contextTags: true } },
+      contextTags: true,
+    },
     orderBy: { openedAt: "desc" },
   });
 }
@@ -102,8 +112,52 @@ export async function getTrade(id: string) {
   const userId = await requireUser();
   return prisma.trade.findFirst({
     where: { id, userId },
-    include: { ruleBreaks: true, review: true, screenshots: true, opportunity: true },
+    include: {
+      ruleBreaks: true,
+      review: true,
+      screenshots: true,
+      opportunity: { include: { contextTags: true } },
+      contextTags: true,
+    },
   });
+}
+
+/** Lazily seeds a trade's own context tags from the user's tag vocabulary, then returns them. */
+export async function ensureTradeContextTags(tradeId: string) {
+  const userId = await requireUser();
+  const trade = await prisma.trade.findFirst({ where: { id: tradeId, userId } });
+  if (!trade) throw new Error("Not found");
+
+  const existing = await prisma.tradeContextTag.findMany({ where: { tradeId }, orderBy: { name: "asc" } });
+  if (existing.length > 0) return existing;
+
+  const tagDefinitions = await getContextTagDefinitions();
+  if (tagDefinitions.length === 0) return [];
+
+  await prisma.tradeContextTag.createMany({
+    data: tagDefinitions.map((tag) => ({
+      tradeId,
+      name: tag.name,
+      weight: NEGATIVE_WEIGHT_TAGS.has(tag.name) ? -1 : 1,
+    })),
+    skipDuplicates: true,
+  });
+
+  return prisma.tradeContextTag.findMany({ where: { tradeId }, orderBy: { name: "asc" } });
+}
+
+export async function toggleTradeContextTag(tradeId: string, tagId: string) {
+  const userId = await requireUser();
+  const trade = await prisma.trade.findFirst({ where: { id: tradeId, userId } });
+  if (!trade) throw new Error("Not found");
+
+  const tag = await prisma.tradeContextTag.findFirst({ where: { id: tagId, tradeId } });
+  if (!tag) throw new Error("Tag not found");
+
+  await prisma.tradeContextTag.update({ where: { id: tagId }, data: { enabled: !tag.enabled } });
+  revalidatePath("/journal");
+  revalidatePath("/backtest");
+  revalidatePath("/");
 }
 
 export async function updateTrade(

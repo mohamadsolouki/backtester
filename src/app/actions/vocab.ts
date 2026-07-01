@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { contextTagNames } from "@/lib/domain";
+import { contextTagNames, defaultTickers } from "@/lib/domain";
 
 const RULE_BREAK_DEFAULTS = [
   "Moved Stop",
@@ -98,7 +98,11 @@ export async function getDistinctTickers() {
     prisma.trade.findMany({ where: { userId }, select: { ticker: true }, distinct: ["ticker"] }),
     prisma.opportunity.findMany({ where: { userId }, select: { ticker: true }, distinct: ["ticker"] }),
   ]);
-  const tickers = new Set([...trades.map((t) => t.ticker), ...opportunities.map((o) => o.ticker)]);
+  const tickers = new Set([
+    ...defaultTickers,
+    ...trades.map((t) => t.ticker),
+    ...opportunities.map((o) => o.ticker),
+  ]);
   return Array.from(tickers).sort();
 }
 

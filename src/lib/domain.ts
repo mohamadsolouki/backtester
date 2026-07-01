@@ -1,3 +1,15 @@
+export const defaultTickers = [
+  // Forex majors
+  "EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD", "USDCAD", "NZDUSD",
+  // Metals
+  "XAUUSD", "XAGUSD",
+  // Indices / futures
+  "US30", "NAS100", "SPX500", "GER40", "UK100",
+  "NQ", "ES", "YM",
+  // Crypto
+  "BTCUSD", "ETHUSD",
+] as const;
+
 export const contextTagNames = [
   "MTR",
   "BTB",

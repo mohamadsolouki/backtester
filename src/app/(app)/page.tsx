@@ -42,7 +42,6 @@ export default async function DashboardPage({
       },
       include: { ruleBreaks: true },
       orderBy: { openedAt: "desc" },
-      take: 50,
     }),
     prisma.playbookSetup.findMany({
       where: { userId, active: true },

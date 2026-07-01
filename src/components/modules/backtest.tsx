@@ -12,6 +12,7 @@ type SerializedTrade = {
   rMultiple: string | number;
   pnl: string | number;
   openedAt: string;
+  contextTags: { name: string; enabled: boolean }[];
   opportunity: { contextTags: { name: string; enabled: boolean }[] } | null;
 };
 
@@ -19,7 +20,9 @@ export function BacktestView({ trades }: { trades: SerializedTrade[] }) {
   const contextMatrix = useMemo(() => {
     const byTag: Record<string, { wins: number; total: number; rSum: number }> = {};
     trades.forEach((t) => {
-      const tags = t.opportunity?.contextTags.filter((tag) => tag.enabled) ?? [];
+      // Prefer the trade's own context tags; fall back to the linked opportunity's for legacy trades.
+      const source = t.contextTags.length > 0 ? t.contextTags : t.opportunity?.contextTags ?? [];
+      const tags = source.filter((tag) => tag.enabled);
       tags.forEach((tag) => {
         if (!byTag[tag.name]) byTag[tag.name] = { wins: 0, total: 0, rSum: 0 };
         byTag[tag.name].total += 1;
@@ -54,7 +57,7 @@ export function BacktestView({ trades }: { trades: SerializedTrade[] }) {
       {contextMatrix.length === 0 ? (
         <EmptyState
           title="No context-tagged trades yet"
-          description="Link trades to opportunities with context tags to see which setups actually perform best."
+          description="Open any trade in the Journal and tag its context signals to see which conditions actually perform best."
         />
       ) : (
         <Surface>

@@ -9,7 +9,11 @@ export default async function BacktestPage() {
 
   const trades = await prisma.trade.findMany({
     where: { userId, status: "CLOSED" },
-    include: { ruleBreaks: true, opportunity: { include: { contextTags: true } } },
+    include: {
+      ruleBreaks: true,
+      opportunity: { include: { contextTags: true } },
+      contextTags: true,
+    },
     orderBy: { openedAt: "desc" },
   });
 
