@@ -84,6 +84,28 @@ const ALL_COLUMNS: { key: ColumnKey; label: string; sortable: boolean }[] = [
 const DEFAULT_VISIBLE: ColumnKey[] = ["date", "ticker", "direction", "entry", "exit", "size", "r", "pnl", "status", "rules", "context"];
 const COLUMNS_STORAGE_KEY = "trade-os-journal-columns";
 
+function padDatePart(value: number) {
+  return String(value).padStart(2, "0");
+}
+
+function toDateTimeLocalValue(value: string | Date) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return [
+    date.getFullYear(),
+    "-",
+    padDatePart(date.getMonth() + 1),
+    "-",
+    padDatePart(date.getDate()),
+    "T",
+    padDatePart(date.getHours()),
+    ":",
+    padDatePart(date.getMinutes()),
+    ":",
+    padDatePart(date.getSeconds()),
+  ].join("");
+}
+
 function sortValue(t: SerializedTrade, key: ColumnKey): number | string {
   switch (key) {
     case "date": return new Date(t.openedAt).getTime();
@@ -455,8 +477,10 @@ function TradeModal({
   const [rMultiple, setRMultiple] = useState(Number(trade.rMultiple));
   const [pnl, setPnl] = useState(Number(trade.pnl));
   const [fees, setFees] = useState(Number(trade.fees));
-  const [openedAt, setOpenedAt] = useState(trade.openedAt.slice(0, 16));
-  const [closedAt, setClosedAt] = useState(trade.closedAt ? trade.closedAt.slice(0, 16) : "");
+  const initialOpenedAt = useMemo(() => toDateTimeLocalValue(trade.openedAt), [trade.openedAt]);
+  const initialClosedAt = useMemo(() => trade.closedAt ? toDateTimeLocalValue(trade.closedAt) : "", [trade.closedAt]);
+  const [openedAt, setOpenedAt] = useState(initialOpenedAt);
+  const [closedAt, setClosedAt] = useState(initialClosedAt);
 
   // Context tab state
   const [notes, setNotes] = useState(trade.notes ?? "");
@@ -514,8 +538,8 @@ function TradeModal({
         ticker, direction, sessionName: session, status,
         entryPrice, exitPrice: exitPrice || undefined,
         quantity, rMultiple, pnl, fees,
-        openedAt: new Date(openedAt),
-        closedAt: closedAt ? new Date(closedAt) : undefined,
+        ...(openedAt !== initialOpenedAt ? { openedAt: new Date(openedAt) } : {}),
+        ...(closedAt !== initialClosedAt && closedAt ? { closedAt: new Date(closedAt) } : {}),
         notes,
         ruleBreaksToAdd: newBreaks.map((rule) => ({ rule, severity: 1 })),
         ruleBreakIdsToRemove: removedIds,
@@ -825,7 +849,7 @@ function DateTimeField({ label, value, onChange }: { label: string; value: strin
   return (
     <label>
       <span className="text-[12px] text-[var(--muted)]">{label}</span>
-      <input type="datetime-local" value={value} onChange={(e) => onChange(e.target.value)}
+      <input type="datetime-local" step={1} value={value} onChange={(e) => onChange(e.target.value)}
         className="mt-1 h-9 w-full rounded-md border border-[var(--line)] bg-[var(--panel)] px-3 text-[13px] text-[var(--ink)] outline-none focus:border-[var(--teal)]" />
     </label>
   );
