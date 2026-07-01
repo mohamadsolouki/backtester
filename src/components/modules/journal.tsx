@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import {
   Plus,
@@ -546,7 +547,7 @@ function TradeModal({
     { id: "review", label: "Review" },
   ];
 
-  return (
+  return createPortal(
     <div className="animate-fade-in fixed inset-0 z-[60] flex items-center justify-center p-4" aria-modal>
       <div className="absolute inset-0 bg-black/45 backdrop-blur-[3px]" onClick={onClose} />
       <div className="animate-scale-in relative flex max-h-[90vh] w-[680px] max-w-full flex-col overflow-hidden rounded-lg border border-[var(--line)] bg-[var(--panel)] shadow-2xl">
@@ -791,7 +792,8 @@ function TradeModal({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
