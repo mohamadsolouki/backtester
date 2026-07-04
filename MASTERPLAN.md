@@ -25,32 +25,32 @@ Gaps blocking "complete trade OS" status:
 
 ## Phases
 
-### Phase 0 — Baseline hygiene
+### Phase 0 — Baseline hygiene ✅ shipped
 Commit pending working-tree changes; land this plan in the repo.
 
-### Phase 1 — Multi-account foundation ✅ core of everything
+### Phase 1 — Multi-account foundation ✅ shipped
 - `TradingAccount` model: name, platform (MT4/MT5/cTrader/TradingView/Binance/Bybit/Other), base currency, starting balance, active flag.
 - `Trade.accountId` (+ stopLoss/takeProfit fields for planned-R verification).
 - Account CRUD in Settings, account column/filter in Journal, account picker on trade create/edit and import.
 - Equity per account = starting balance + cumulative P&L.
 
-### Phase 2 — Universal import hub
+### Phase 2 — Universal import hub ✅ shipped
 - TradingView export parser (strategy-tester "List of Trades" and paper-trading history).
 - Binance Futures position-history and Bybit closed-P&L CSV parsers.
 - Smarter generic CSV column auto-mapping; single auto-detect entry point.
 - Import assigns trades to a chosen account; batch records the source platform.
 
-### Phase 3 — TradingView webhook ingestion
+### Phase 3 — TradingView webhook ingestion ✅ shipped
 - Per-user webhook token (regenerable in Settings).
 - `POST /api/webhooks/tradingview` — alerts open/close trades or create watchlist opportunities.
 - Copy-paste alert-message template in Settings.
 
-### Phase 4 — Analytics 2.0
+### Phase 4 — Analytics 2.0 ✅ shipped
 - Drawdown curve, profit factor/expectancy per account, win/loss streaks.
 - Day-of-week × hour edge heatmap; per-symbol performance table; monthly P&L calendar.
 - Planned-R vs realized-R when stop data exists.
 
-### Phase 5 — Risk engine
+### Phase 5 — Risk engine ✅ shipped
 - Forex position-size calculator: pip size/value per symbol class (majors, JPY pairs, metals, indices, crypto), lots from risk % + stop distance.
 - Prop-firm rule tracker: account size, max daily loss, max total drawdown, profit target → live status vs. rules.
 - Risk status surfaced on Overview.
