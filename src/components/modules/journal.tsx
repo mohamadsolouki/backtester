@@ -55,7 +55,10 @@ type SerializedTrade = {
   contextTags: SerializedContextTag[];
   review: { id: string; score: number; lesson: string; actionItem: string | null } | null;
   opportunity: { id: string; ticker: string; setupName: string } | null;
+  account: { id: string; name: string; platform: string; currency: string } | null;
 };
+
+type AccountOption = { id: string; name: string };
 
 type JournalFilter = "All" | "Wins" | "Losses" | "Rule Breaks" | "Open";
 
@@ -63,11 +66,12 @@ type JournalFilter = "All" | "Wins" | "Losses" | "Rule Breaks" | "Open";
 
 type ColumnKey =
   | "date" | "ticker" | "direction" | "session" | "entry" | "exit"
-  | "size" | "r" | "pnl" | "fees" | "status" | "rules" | "context";
+  | "size" | "r" | "pnl" | "fees" | "status" | "rules" | "context" | "account";
 
 const ALL_COLUMNS: { key: ColumnKey; label: string; sortable: boolean }[] = [
   { key: "date", label: "Date", sortable: true },
   { key: "ticker", label: "Ticker", sortable: true },
+  { key: "account", label: "Account", sortable: false },
   { key: "direction", label: "Dir", sortable: false },
   { key: "session", label: "Session", sortable: false },
   { key: "entry", label: "Entry", sortable: true },
@@ -124,15 +128,18 @@ export function JournalView({
   trades,
   tickerOptions,
   ruleBreakOptions,
+  accountOptions = [],
 }: {
   trades: SerializedTrade[];
   tickerOptions: string[];
   ruleBreakOptions: string[];
+  accountOptions?: AccountOption[];
 }) {
   const { t } = useI18n();
   const [filter, setFilter] = useState<JournalFilter>("All");
   const [search, setSearch] = useState("");
   const [tickerFilter, setTickerFilter] = useState<string>("All");
+  const [accountFilter, setAccountFilter] = useState<string>("All");
   const [sortKey, setSortKey] = useState<ColumnKey>("date");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [visibleColumns, setVisibleColumns] = useState<ColumnKey[]>(DEFAULT_VISIBLE);
@@ -173,6 +180,7 @@ export function JournalView({
       if (filter === "Rule Breaks" && t.ruleBreaks.length === 0) return false;
       if (filter === "Open" && t.status !== "OPEN") return false;
       if (tickerFilter !== "All" && t.ticker !== tickerFilter) return false;
+      if (accountFilter !== "All" && t.account?.id !== accountFilter) return false;
       if (search.trim()) {
         const q = search.trim().toLowerCase();
         const haystack = `${t.ticker} ${t.notes ?? ""}`.toLowerCase();
@@ -189,7 +197,7 @@ export function JournalView({
     });
 
     return rows;
-  }, [trades, filter, tickerFilter, search, sortKey, sortDir]);
+  }, [trades, filter, tickerFilter, accountFilter, search, sortKey, sortDir]);
 
   function handleSort(key: ColumnKey) {
     if (sortKey === key) {
@@ -216,6 +224,7 @@ export function JournalView({
           onClose={() => setShowForm(false)}
           tickerOptions={tickerOptions}
           ruleBreakOptions={ruleBreakOptions}
+          accountOptions={accountOptions}
         />
       )}
 
@@ -224,6 +233,7 @@ export function JournalView({
           trade={viewingTrade}
           tickerOptions={tickerOptions}
           ruleBreakOptions={ruleBreakOptions}
+          accountOptions={accountOptions}
           onClose={() => setViewingTrade(null)}
         />
       )}
@@ -258,6 +268,16 @@ export function JournalView({
             <option value="All">{t("All Tickers")}</option>
             {tickers.map((tk) => <option key={tk} value={tk}>{tk}</option>)}
           </select>
+          {accountOptions.length > 0 && (
+            <select
+              value={accountFilter}
+              onChange={(e) => setAccountFilter(e.target.value)}
+              className="h-8 rounded-md border border-[var(--line)] bg-[var(--panel)] px-2 text-[12px] text-[var(--ink)] outline-none focus:border-[var(--teal)]"
+            >
+              <option value="All">{t("All Accounts")}</option>
+              {accountOptions.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+            </select>
+          )}
           <div ref={columnsRef} className="relative">
             <button
               onClick={() => setShowColumnsMenu((v) => !v)}
@@ -318,6 +338,7 @@ export function JournalView({
                   >
                     {visibleColumns.includes("date") && <td className="num h-10 px-2 text-[var(--muted)]">{new Date(trade.openedAt).toLocaleDateString()}</td>}
                     {visibleColumns.includes("ticker") && <td className="px-2 font-semibold">{trade.ticker}</td>}
+                    {visibleColumns.includes("account") && <td className="px-2 text-[var(--muted)]">{trade.account?.name ?? "—"}</td>}
                     {visibleColumns.includes("direction") && (
                       <td className="px-2">
                         <span className={cn("font-medium", trade.direction === "LONG" ? "text-[var(--teal-dark)]" : "text-[var(--red)]")}>
@@ -364,10 +385,12 @@ function NewTradeForm({
   onClose,
   tickerOptions,
   ruleBreakOptions,
+  accountOptions = [],
 }: {
   onClose: () => void;
   tickerOptions: string[];
   ruleBreakOptions: string[];
+  accountOptions?: AccountOption[];
 }) {
   const { t } = useI18n();
   const [pending, startTransition] = useTransition();
@@ -385,6 +408,9 @@ function NewTradeForm({
   const [status, setStatus] = useState<TradeStatus>("CLOSED");
   const [notes, setNotes] = useState("");
   const [ruleBreak, setRuleBreak] = useState("");
+  const [accountId, setAccountId] = useState(accountOptions[0]?.id ?? "");
+  const [stopPrice, setStopPrice] = useState(0);
+  const [takeProfit, setTakeProfit] = useState(0);
 
   function handleSubmit() {
     if (!ticker || !entryPrice) { toast.error(t("Ticker and entry price are required")); return; }
@@ -395,6 +421,9 @@ function NewTradeForm({
         openedAt: new Date(openedAt),
         closedAt: closedAt ? new Date(closedAt) : undefined,
         status, notes,
+        accountId: accountId || undefined,
+        stopPrice: stopPrice || undefined,
+        takeProfit: takeProfit || undefined,
         ruleBreaks: ruleBreak ? [{ rule: ruleBreak, severity: 1 }] : undefined,
       });
       toast.success(t("Trade created"));
@@ -413,8 +442,18 @@ function NewTradeForm({
         <SelectField label={t("Direction")} value={direction} onChange={(v) => setDirection(v as "LONG" | "SHORT")} options={[["LONG", t("Long")], ["SHORT", t("Short")]]} />
         <SelectField label={t("Session")} value={session} onChange={(v) => setSession(v as SessionName)} options={[["PRE_MARKET", t("Pre-Market")], ["OPEN", t("Open")], ["MIDDAY", t("Midday")], ["CLOSE", t("Close")], ["POST_MARKET", t("Post-Market")]]} />
         <SelectField label={t("Status")} value={status} onChange={(v) => setStatus(v as TradeStatus)} options={[["CLOSED", t("Closed")], ["OPEN", t("Open")], ["SCRATCH", t("Scratch")]]} />
+        {accountOptions.length > 0 && (
+          <SelectField
+            label={t("Account")}
+            value={accountId}
+            onChange={setAccountId}
+            options={[["", t("No account")], ...accountOptions.map((a) => [a.id, a.name] as [string, string])]}
+          />
+        )}
         <NumberField label={t("Entry Price")} value={entryPrice} onChange={setEntryPrice} step="0.01" />
         <NumberField label={t("Exit Price")} value={exitPrice} onChange={setExitPrice} step="0.01" />
+        <NumberField label={t("Stop Loss")} value={stopPrice} onChange={setStopPrice} step="0.01" />
+        <NumberField label={t("Take Profit")} value={takeProfit} onChange={setTakeProfit} step="0.01" />
         <NumberField label={t("Size / Qty")} value={quantity} onChange={setQuantity} step="0.01" />
         <NumberField label={<span className="inline-flex items-center gap-1">{t("R Multiple")} <HelpTip content={t(helpTips.rMultiple)} /></span>} value={rMultiple} onChange={setRMultiple} step="0.1" />
         <NumberField label={t("P&L ($)")} value={pnl} onChange={setPnl} step="0.01" />
@@ -455,11 +494,13 @@ function TradeModal({
   trade,
   tickerOptions,
   ruleBreakOptions,
+  accountOptions = [],
   onClose,
 }: {
   trade: SerializedTrade;
   tickerOptions: string[];
   ruleBreakOptions: string[];
+  accountOptions?: AccountOption[];
   onClose: () => void;
 }) {
   const { t } = useI18n();
@@ -481,6 +522,7 @@ function TradeModal({
   const initialClosedAt = useMemo(() => trade.closedAt ? toDateTimeLocalValue(trade.closedAt) : "", [trade.closedAt]);
   const [openedAt, setOpenedAt] = useState(initialOpenedAt);
   const [closedAt, setClosedAt] = useState(initialClosedAt);
+  const [accountId, setAccountId] = useState(trade.account?.id ?? "");
 
   // Context tab state
   const [notes, setNotes] = useState(trade.notes ?? "");
@@ -540,6 +582,7 @@ function TradeModal({
         quantity, rMultiple, pnl, fees,
         ...(openedAt !== initialOpenedAt ? { openedAt: new Date(openedAt) } : {}),
         ...(closedAt !== initialClosedAt && closedAt ? { closedAt: new Date(closedAt) } : {}),
+        ...(accountId !== (trade.account?.id ?? "") ? { accountId } : {}),
         notes,
         ruleBreaksToAdd: newBreaks.map((rule) => ({ rule, severity: 1 })),
         ruleBreakIdsToRemove: removedIds,
@@ -673,7 +716,16 @@ function TradeModal({
               <SelectField label={t("Direction")} value={direction} onChange={(v) => setDirection(v as "LONG" | "SHORT")} options={[["LONG", t("Long")], ["SHORT", t("Short")]]} />
               <SelectField label={t("Session")} value={session} onChange={(v) => setSession(v as SessionName)} options={[["PRE_MARKET", t("Pre-Market")], ["OPEN", t("Open")], ["MIDDAY", t("Midday")], ["CLOSE", t("Close")], ["POST_MARKET", t("Post-Market")]]} />
               <SelectField label={t("Status")} value={status} onChange={(v) => setStatus(v as TradeStatus)} options={[["CLOSED", t("Closed")], ["OPEN", t("Open")], ["SCRATCH", t("Scratch")]]} />
-              <div />
+              {accountOptions.length > 0 ? (
+                <SelectField
+                  label={t("Account")}
+                  value={accountId}
+                  onChange={setAccountId}
+                  options={[["", t("No account")], ...accountOptions.map((a) => [a.id, a.name] as [string, string])]}
+                />
+              ) : (
+                <div />
+              )}
               <NumberField label={t("Entry Price")} value={entryPrice} onChange={setEntryPrice} step="0.01" />
               <NumberField label={t("Exit Price")} value={exitPrice} onChange={setExitPrice} step="0.01" />
               <NumberField label={t("Size / Qty")} value={quantity} onChange={setQuantity} step="0.01" />

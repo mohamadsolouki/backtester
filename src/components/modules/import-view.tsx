@@ -35,8 +35,17 @@ function mapSessionName(
   return "POST_MARKET";
 }
 
-export function ImportView({ batches }: { batches: SerializedBatch[] }) {
+type AccountOption = { id: string; name: string };
+
+export function ImportView({
+  batches,
+  accountOptions = [],
+}: {
+  batches: SerializedBatch[];
+  accountOptions?: AccountOption[];
+}) {
   const { t } = useI18n();
+  const [accountId, setAccountId] = useState(accountOptions[0]?.id ?? "");
   const [result, setResult] = useState<ParseResult | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [duplicates, setDuplicates] = useState<Set<number>>(new Set());
@@ -174,12 +183,18 @@ export function ImportView({ batches }: { batches: SerializedBatch[] }) {
         closedAt: t.closedAt ?? undefined,
         status: t.closedAt ? ("CLOSED" as const) : ("OPEN" as const),
         notes: t.comment || undefined,
+        stopPrice: t.stopLoss ?? undefined,
+        takeProfit: t.takeProfit ?? undefined,
       }));
 
     startImport(async () => {
       const { trades: created, skipped } = await bulkCreateTrades(
         trades,
         fileName,
+        {
+          accountId: accountId || undefined,
+          fileType: result.format,
+        },
       );
       const msg =
         skipped > 0
@@ -207,6 +222,21 @@ export function ImportView({ batches }: { batches: SerializedBatch[] }) {
     >
       <Surface>
         <SectionTitle>{t("Upload File")}</SectionTitle>
+        {accountOptions.length > 0 && (
+          <label className="mt-3 flex items-center gap-2 text-[12px] text-[var(--muted)]">
+            {t("Import into account")}
+            <select
+              value={accountId}
+              onChange={(e) => setAccountId(e.target.value)}
+              className="h-8 rounded-md border border-[var(--line)] bg-[var(--panel)] px-2 text-[12px] text-[var(--ink)] outline-none focus:border-[var(--teal)]"
+            >
+              <option value="">{t("No account")}</option>
+              {accountOptions.map((a) => (
+                <option key={a.id} value={a.id}>{a.name}</option>
+              ))}
+            </select>
+          </label>
+        )}
         <div className="mt-3">
           <label className="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-[var(--line)] p-6 text-center transition-all hover:border-[var(--teal)] hover:bg-[var(--teal-soft)]">
             <Upload className="h-8 w-8 text-[var(--teal)]" />

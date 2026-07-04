@@ -32,6 +32,9 @@ const createTradeSchema = z.object({
   status: z.enum(["OPEN", "CLOSED", "SCRATCH"]).default("CLOSED"),
   notes: z.string().optional(),
   opportunityId: z.string().optional(),
+  accountId: z.string().optional(),
+  stopPrice: z.number().positive().optional(),
+  takeProfit: z.number().positive().optional(),
   ruleBreaks: z
     .array(
       z.object({
@@ -64,6 +67,9 @@ export async function createTrade(input: z.input<typeof createTradeSchema>) {
       status: data.status,
       notes: data.notes,
       opportunityId: data.opportunityId || undefined,
+      accountId: data.accountId || undefined,
+      stopPrice: data.stopPrice,
+      takeProfit: data.takeProfit,
       ruleBreaks: data.ruleBreaks?.length
         ? { create: data.ruleBreaks }
         : undefined,
@@ -83,11 +89,13 @@ export async function getTrades(filters?: {
   direction?: "LONG" | "SHORT";
   status?: "OPEN" | "CLOSED" | "SCRATCH";
   sessionNames?: DbSessionName[];
+  accountId?: string;
 }) {
   const userId = await requireUser();
   return prisma.trade.findMany({
     where: {
       userId,
+      ...(filters?.accountId ? { accountId: filters.accountId } : {}),
       ...(filters?.from || filters?.to
         ? {
             openedAt: {
@@ -109,6 +117,7 @@ export async function getTrades(filters?: {
       screenshots: true,
       opportunity: { include: { contextTags: true } },
       contextTags: true,
+      account: { select: { id: true, name: true, platform: true, currency: true } },
     },
     orderBy: [{ openedAt: "desc" }, { createdAt: "asc" }],
   });
@@ -217,6 +226,15 @@ export async function updateTrade(
         ...(fields.closedAt ? { closedAt: fields.closedAt } : {}),
         ...(fields.status ? { status: fields.status } : {}),
         ...(fields.notes !== undefined ? { notes: fields.notes } : {}),
+        ...(fields.accountId !== undefined
+          ? { accountId: fields.accountId || null }
+          : {}),
+        ...(fields.stopPrice !== undefined
+          ? { stopPrice: fields.stopPrice }
+          : {}),
+        ...(fields.takeProfit !== undefined
+          ? { takeProfit: fields.takeProfit }
+          : {}),
       },
     });
     if (ruleBreakIdsToRemove?.length) {
@@ -294,6 +312,7 @@ export async function checkImportDuplicates(
 export async function bulkCreateTrades(
   trades: z.input<typeof createTradeSchema>[],
   fileName?: string,
+  options?: { accountId?: string; fileType?: string },
 ) {
   const userId = await requireUser();
   const results = [];
@@ -340,6 +359,9 @@ export async function bulkCreateTrades(
         status: data.status,
         notes: data.notes,
         opportunityId: data.opportunityId || undefined,
+        accountId: data.accountId || options?.accountId || undefined,
+        stopPrice: data.stopPrice,
+        takeProfit: data.takeProfit,
       },
     });
     results.push(trade);
@@ -349,7 +371,7 @@ export async function bulkCreateTrades(
     data: {
       userId,
       fileName: fileName ?? "import",
-      fileType: "metatrader",
+      fileType: options?.fileType ?? "metatrader",
       rowCount: trades.length,
       validRows: results.length,
       errorRows: skipped,

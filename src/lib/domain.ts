@@ -10,6 +10,16 @@ export const defaultTickers = [
   "BTCUSD", "ETHUSD",
 ] as const;
 
+export const platformLabels: Record<string, string> = {
+  MT4: "MetaTrader 4",
+  MT5: "MetaTrader 5",
+  CTRADER: "cTrader",
+  TRADINGVIEW: "TradingView",
+  BINANCE: "Binance",
+  BYBIT: "Bybit",
+  OTHER: "Other",
+};
+
 export const contextTagNames = [
   "MTR",
   "BTB",

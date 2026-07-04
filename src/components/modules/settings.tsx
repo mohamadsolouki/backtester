@@ -2,10 +2,17 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Check, Plus, Trash2, X } from "lucide-react";
+import { Check, Plus, Trash2, Wallet, X } from "lucide-react";
 import { Surface, SectionTitle, ModuleShell, NumberField, ActionButton, Segmented } from "@/components/ui";
 import { updateUserSettings } from "@/app/actions/settings";
 import { clearAllTrades } from "@/app/actions/trades";
+import {
+  createTradingAccount,
+  archiveTradingAccount,
+  type TradePlatformName,
+} from "@/app/actions/accounts";
+import { formatCurrency } from "@/lib/utils";
+import { platformLabels } from "@/lib/domain";
 import {
   createContextTagDefinition,
   createRuleBreakDefinition,
@@ -24,19 +31,42 @@ type UserSettingsData = {
 
 type VocabItem = { id: string; name: string };
 
+type AccountItem = {
+  id: string;
+  name: string;
+  platform: string;
+  currency: string;
+  startingBalance: string | number;
+  tradeCount: number;
+  netPnl: number;
+  equity: number;
+};
+
+const PLATFORMS: TradePlatformName[] = [
+  "MT4",
+  "MT5",
+  "CTRADER",
+  "TRADINGVIEW",
+  "BINANCE",
+  "BYBIT",
+  "OTHER",
+];
+
 const LEGACY_STORAGE_KEY = "tip-risk-settings";
 
 export function SettingsView({
   initialSettings,
   contextTags,
   ruleBreaks,
+  accounts,
 }: {
   initialSettings: UserSettingsData;
   contextTags: VocabItem[];
   ruleBreaks: VocabItem[];
+  accounts: AccountItem[];
 }) {
   const { t } = useI18n();
-  const [tab, setTab] = useState<"General" | "Vocabulary">("General");
+  const [tab, setTab] = useState<"General" | "Accounts" | "Vocabulary">("General");
   const [pending, startTransition] = useTransition();
   const [settings, setSettings] = useState({
     riskPerTrade: Number(initialSettings.riskPerTrade),
@@ -82,10 +112,12 @@ export function SettingsView({
       eyebrow={t("System")}
       description={t("Risk controls, vocabulary, and platform preferences.")}
       actions={
-        <Segmented value={tab} options={["General", "Vocabulary"]} onChange={(v) => setTab(v as typeof tab)} />
+        <Segmented value={tab} options={["General", "Accounts", "Vocabulary"]} onChange={(v) => setTab(v as typeof tab)} />
       }
     >
-      {tab === "General" ? (
+      {tab === "Accounts" ? (
+        <AccountsPanel accounts={accounts} />
+      ) : tab === "General" ? (
         <div className="space-y-3">
           <Surface>
             <div className="flex items-center justify-between">
@@ -126,6 +158,146 @@ export function SettingsView({
         </div>
       )}
     </ModuleShell>
+  );
+}
+
+function AccountsPanel({ accounts }: { accounts: AccountItem[] }) {
+  const { t } = useI18n();
+  const [pending, startTransition] = useTransition();
+  const [list, setList] = useState(accounts);
+  const [name, setName] = useState("");
+  const [platform, setPlatform] = useState<TradePlatformName>("MT5");
+  const [currency, setCurrency] = useState("USD");
+  const [balance, setBalance] = useState(10000);
+
+  function handleAdd() {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    startTransition(async () => {
+      const created = await createTradingAccount({
+        name: trimmed,
+        platform,
+        currency: currency.trim().toUpperCase() || "USD",
+        startingBalance: balance,
+      });
+      setList((prev) => [
+        ...prev.filter((a) => a.id !== created.id),
+        {
+          id: created.id,
+          name: created.name,
+          platform: created.platform,
+          currency: created.currency,
+          startingBalance: Number(created.startingBalance),
+          tradeCount: 0,
+          netPnl: 0,
+          equity: Number(created.startingBalance),
+        },
+      ]);
+      setName("");
+      toast.success(`${t("Account added")}: ${trimmed}`);
+    });
+  }
+
+  function handleArchive(account: AccountItem) {
+    startTransition(async () => {
+      await archiveTradingAccount(account.id);
+      setList((prev) => prev.filter((a) => a.id !== account.id));
+      toast.success(`${t("Account archived")}: ${account.name}`);
+    });
+  }
+
+  const inputClass =
+    "h-9 rounded-md border border-[var(--line)] bg-[var(--panel)] px-3 text-[13px] outline-none focus:border-[var(--teal)]";
+
+  return (
+    <div className="space-y-3">
+      <Surface>
+        <SectionTitle>{t("Trading Accounts")}</SectionTitle>
+        <p className="mt-1 text-[12px] text-[var(--muted)]">
+          {t("Each broker, prop-firm challenge, or exchange account you trade. Trades, imports, and analytics can be scoped per account.")}
+        </p>
+        <div className="mt-4 grid grid-cols-5 gap-2 max-[900px]:grid-cols-2 max-[560px]:grid-cols-1">
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+            placeholder={t("Account name...")}
+            className={inputClass}
+          />
+          <select
+            value={platform}
+            onChange={(e) => setPlatform(e.target.value as TradePlatformName)}
+            className={inputClass}
+          >
+            {PLATFORMS.map((p) => (
+              <option key={p} value={p}>{platformLabels[p]}</option>
+            ))}
+          </select>
+          <input
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+            placeholder="USD"
+            maxLength={10}
+            className={inputClass}
+          />
+          <input
+            type="number"
+            value={balance}
+            onChange={(e) => setBalance(Number(e.target.value))}
+            placeholder={t("Starting balance")}
+            className={inputClass}
+          />
+          <button
+            onClick={handleAdd}
+            disabled={pending}
+            className="flex h-9 items-center justify-center gap-1 rounded-md bg-[var(--teal)] px-3 text-[12px] font-semibold text-white disabled:opacity-50"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            {t("Add Account")}
+          </button>
+        </div>
+        <div className="mt-4 space-y-1.5">
+          {list.length === 0 && (
+            <p className="rounded-md border border-dashed border-[var(--line)] p-4 text-center text-[12px] text-[var(--muted)]">
+              {t("No accounts yet. Add your first broker or exchange account above.")}
+            </p>
+          )}
+          {list.map((account) => (
+            <div
+              key={account.id}
+              className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-[var(--line)] px-3 py-2.5 text-[13px]"
+            >
+              <div className="flex items-center gap-2.5">
+                <Wallet className="h-4 w-4 text-[var(--teal-dark)]" />
+                <div>
+                  <span className="font-semibold">{account.name}</span>
+                  <span className="ms-2 rounded-sm border border-[var(--line)] px-1.5 py-0.5 text-[10px] font-semibold uppercase text-[var(--muted)]">
+                    {platformLabels[account.platform] ?? account.platform}
+                  </span>
+                </div>
+              </div>
+              <div className="num flex items-center gap-4 text-[12px]">
+                <span className="text-[var(--muted)]">{account.tradeCount} {t("Trades")}</span>
+                <span className={account.netPnl >= 0 ? "text-[var(--teal-dark)]" : "text-[var(--red)]"}>
+                  {account.netPnl >= 0 ? "+" : ""}{formatCurrency(account.netPnl)}
+                </span>
+                <span className="font-semibold">
+                  {t("Equity")} {formatCurrency(account.equity)} {account.currency}
+                </span>
+                <button
+                  onClick={() => handleArchive(account)}
+                  disabled={pending}
+                  title={t("Archive account")}
+                  className="text-[var(--muted)] hover:text-[var(--red)]"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Surface>
+    </div>
   );
 }
 

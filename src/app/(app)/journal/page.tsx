@@ -1,4 +1,5 @@
 import { getTrades } from "@/app/actions/trades";
+import { getTradingAccounts } from "@/app/actions/accounts";
 import { getDistinctTickers, getRuleBreakDefinitions } from "@/app/actions/vocab";
 import { JournalView } from "@/components/modules/journal";
 import { parseDateRangeSearchParams, sessionsToDbValues, type DateRangeSearchParams } from "@/lib/date-range";
@@ -11,7 +12,7 @@ export default async function JournalPage({
 }) {
   const { range, sessions } = parseDateRangeSearchParams(await searchParams);
 
-  const [trades, tickers, ruleBreakDefinitions] = await Promise.all([
+  const [trades, tickers, ruleBreakDefinitions, accounts] = await Promise.all([
     getTrades({
       from: range.from,
       to: range.to,
@@ -19,6 +20,7 @@ export default async function JournalPage({
     }),
     getDistinctTickers(),
     getRuleBreakDefinitions(),
+    getTradingAccounts(),
   ]);
 
   return (
@@ -26,6 +28,7 @@ export default async function JournalPage({
       trades={JSON.parse(JSON.stringify(trades))}
       tickerOptions={tickers}
       ruleBreakOptions={ruleBreakDefinitions.map((d) => d.name)}
+      accountOptions={accounts.map((a) => ({ id: a.id, name: a.name }))}
     />
   );
 }
