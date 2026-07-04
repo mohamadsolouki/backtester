@@ -17,6 +17,7 @@ import {
   LayoutDashboard,
   NotebookTabs,
   Settings,
+  Shield,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -35,6 +36,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { label: "Overview", icon: LayoutDashboard, href: "/" },
       { label: "Watchlist", icon: Activity, href: "/opportunities" },
       { label: "Playbook", icon: BookOpen, href: "/playbook" },
+      { label: "Risk", icon: Shield, href: "/risk" },
     ],
   },
   {
