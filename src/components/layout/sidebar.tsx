@@ -19,6 +19,7 @@ import {
   Settings,
   Shield,
   X,
+  FlaskConical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "./i18n-provider";
@@ -51,6 +52,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { label: "Analytics", icon: BarChart3, href: "/analytics" },
       { label: "Edge Lab", icon: Database, href: "/backtest" },
+      { label: "Backtest Lab", icon: FlaskConical, href: "/lab" },
       { label: "Reports", icon: FileSpreadsheet, href: "/reports" },
     ],
   },
