@@ -434,6 +434,7 @@ model UserSettings {
   minR           Decimal  @default(1.5) @db.Decimal(5, 2)
   theme          String   @default("light")
   onboardingSeen Boolean  @default(false)
+  webhookToken   String?  @unique
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

@@ -13,6 +13,7 @@ import {
 } from "@/app/actions/accounts";
 import { formatCurrency } from "@/lib/utils";
 import { platformLabels } from "@/lib/domain";
+import { regenerateWebhookToken, revokeWebhookToken } from "@/app/actions/webhook";
 import {
   createContextTagDefinition,
   createRuleBreakDefinition,
@@ -59,11 +60,13 @@ export function SettingsView({
   contextTags,
   ruleBreaks,
   accounts,
+  webhookToken,
 }: {
   initialSettings: UserSettingsData;
   contextTags: VocabItem[];
   ruleBreaks: VocabItem[];
   accounts: AccountItem[];
+  webhookToken: string | null;
 }) {
   const { t } = useI18n();
   const [tab, setTab] = useState<"General" | "Accounts" | "Vocabulary">("General");
@@ -137,6 +140,7 @@ export function SettingsView({
               <NumberField label={t("Min R Multiple")} value={settings.minR} onChange={(v) => update("minR", v)} step="0.1" />
             </div>
           </Surface>
+          <WebhookPanel initialToken={webhookToken} />
           <DangerZone />
         </div>
       ) : (
@@ -298,6 +302,109 @@ function AccountsPanel({ accounts }: { accounts: AccountItem[] }) {
         </div>
       </Surface>
     </div>
+  );
+}
+
+function WebhookPanel({ initialToken }: { initialToken: string | null }) {
+  const { t } = useI18n();
+  const [pending, startTransition] = useTransition();
+  const [token, setToken] = useState(initialToken);
+
+  const webhookUrl =
+    typeof window !== "undefined" && token
+      ? `${window.location.origin}/api/webhooks/tradingview?token=${token}`
+      : "";
+
+  const alertTemplate = `{"ticker": "{{ticker}}", "action": "buy", "price": {{close}}, "qty": 1, "comment": "my setup"}`;
+
+  function regenerate() {
+    startTransition(async () => {
+      const next = await regenerateWebhookToken();
+      setToken(next);
+      toast.success(t("Webhook token generated"));
+    });
+  }
+
+  function revoke() {
+    startTransition(async () => {
+      await revokeWebhookToken();
+      setToken(null);
+      toast.success(t("Webhook disabled"));
+    });
+  }
+
+  function copy(value: string) {
+    navigator.clipboard.writeText(value);
+    toast.success(t("Copied to clipboard"));
+  }
+
+  return (
+    <Surface>
+      <SectionTitle>{t("TradingView Webhook")}</SectionTitle>
+      <p className="mt-1 text-[12px] text-[var(--muted)]">
+        {t("Let TradingView alerts open and close trades automatically. Add the URL below to any alert with a JSON message; use action \"buy\", \"sell\", or \"close\".")}
+      </p>
+      {token ? (
+        <div className="mt-4 space-y-3">
+          <div>
+            <span className="text-[12px] text-[var(--muted)]">{t("Webhook URL")}</span>
+            <div className="mt-1 flex gap-2">
+              <input
+                readOnly
+                value={webhookUrl}
+                className="num h-9 flex-1 rounded-md border border-[var(--line)] bg-[var(--panel-soft)] px-3 text-[12px]"
+              />
+              <button
+                onClick={() => copy(webhookUrl)}
+                className="h-9 rounded-md border border-[var(--line)] px-3 text-[12px] font-semibold hover:bg-[var(--panel-soft)]"
+              >
+                {t("Copy")}
+              </button>
+            </div>
+          </div>
+          <div>
+            <span className="text-[12px] text-[var(--muted)]">{t("Alert message template")}</span>
+            <div className="mt-1 flex gap-2">
+              <input
+                readOnly
+                value={alertTemplate}
+                className="num h-9 flex-1 rounded-md border border-[var(--line)] bg-[var(--panel-soft)] px-3 text-[12px]"
+              />
+              <button
+                onClick={() => copy(alertTemplate)}
+                className="h-9 rounded-md border border-[var(--line)] px-3 text-[12px] font-semibold hover:bg-[var(--panel-soft)]"
+              >
+                {t("Copy")}
+              </button>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={regenerate}
+              disabled={pending}
+              className="h-8 rounded-md border border-[var(--line)] px-3 text-[12px] font-semibold hover:bg-[var(--panel-soft)] disabled:opacity-50"
+            >
+              {t("Rotate token")}
+            </button>
+            <button
+              onClick={revoke}
+              disabled={pending}
+              className="h-8 rounded-md border border-[var(--red)]/40 px-3 text-[12px] font-semibold text-[var(--red)] hover:bg-[var(--red)]/10 disabled:opacity-50"
+            >
+              {t("Disable webhook")}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={regenerate}
+          disabled={pending}
+          className="mt-4 h-9 rounded-md bg-[var(--teal)] px-4 text-[12px] font-semibold text-white hover:bg-[var(--teal-dark)] disabled:opacity-50"
+        >
+          {pending ? t("Generating…") : t("Generate webhook token")}
+        </button>
+      )}
+    </Surface>
   );
 }
 
