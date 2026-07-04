@@ -6,11 +6,8 @@ import * as XLSX from "xlsx";
 import { Upload, Check, AlertTriangle } from "lucide-react";
 import { Surface, SectionTitle, ModuleShell } from "@/components/ui";
 import { cn, formatCurrency } from "@/lib/utils";
-import {
-  parseMetaTraderFile,
-  parseMT5ExcelRows,
-  type ParseResult,
-} from "@/lib/metatrader";
+import { parseMT5ExcelRows, type ParseResult } from "@/lib/metatrader";
+import { parseTradeFile } from "@/lib/importers";
 import { bulkCreateTrades, checkImportDuplicates } from "@/app/actions/trades";
 import { useI18n } from "@/components/layout/i18n-provider";
 
@@ -118,7 +115,7 @@ export function ImportView({
     const reader = new FileReader();
     reader.onload = (e) => {
       const content = e.target?.result as string;
-      applyParseResult(parseMetaTraderFile(content), file.name);
+      applyParseResult(parseTradeFile(content, file.name), file.name);
     };
     reader.readAsText(file);
   }
@@ -217,7 +214,7 @@ export function ImportView({
       title={t("Import Trades")}
       eyebrow={t("System")}
       description={t(
-        "Import trade history from MetaTrader (MT4/MT5), CSV, or XLSX files.",
+        "Import trade history from MetaTrader (MT4/MT5), TradingView, Binance, Bybit, CSV, or XLSX files.",
       )}
     >
       <Surface>
@@ -245,7 +242,7 @@ export function ImportView({
             </div>
             <p className="mt-1 text-[12px] text-[var(--muted)]">
               {t(
-                'Supports MT5 "Trade History Report" Excel exports, MT4 HTML statements, MT5 XML exports, and CSV files',
+                'Supports MT5 "Trade History Report" Excel exports, MT4 HTML statements, MT5 XML exports, TradingView "List of Trades" CSVs, Binance position history, Bybit closed P&L, and generic CSV files',
               )}
             </p>
             <input

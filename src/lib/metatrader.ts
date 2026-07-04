@@ -30,7 +30,15 @@ export type ParsedTrade = {
 export type ParseResult = {
   trades: ParsedTrade[];
   errors: string[];
-  format: "mt4-html" | "mt5-xml" | "mt5-xlsx" | "csv" | "unknown";
+  format:
+    | "mt4-html"
+    | "mt5-xml"
+    | "mt5-xlsx"
+    | "csv"
+    | "tradingview"
+    | "binance"
+    | "bybit"
+    | "unknown";
 };
 
 // ---------------------------------------------------------------------------
@@ -84,7 +92,7 @@ const DATE_PATTERNS: { re: RegExp; build: (m: RegExpMatchArray) => Date }[] = [
   },
 ];
 
-function parseDate(raw: string): Date | null {
+export function parseDate(raw: string): Date | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
 
@@ -105,7 +113,7 @@ function parseDate(raw: string): Date | null {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function toNumber(raw: string | undefined): number {
+export function toNumber(raw: string | undefined): number {
   if (raw === undefined || raw === null) return 0;
   const cleaned = raw.replace(/\s/g, "").replace(/,/g, "");
   const n = Number(cleaned);
@@ -510,7 +518,7 @@ const COLUMN_ALIASES: Record<string, string> = {
   taxes: "taxes",
 };
 
-function detectDelimiter(header: string): string {
+export function detectDelimiter(header: string): string {
   const tabCount = (header.match(/\t/g) ?? []).length;
   const commaCount = (header.match(/,/g) ?? []).length;
   const semicolonCount = (header.match(/;/g) ?? []).length;
@@ -520,7 +528,7 @@ function detectDelimiter(header: string): string {
   return ",";
 }
 
-function splitCsvRow(line: string, delimiter: string): string[] {
+export function splitCsvRow(line: string, delimiter: string): string[] {
   const cells: string[] = [];
   let current = "";
   let inQuotes = false;
