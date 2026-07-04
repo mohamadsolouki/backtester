@@ -26,13 +26,23 @@ type SerializedTrade = {
   rMultiple: string | number;
   pnl: string | number;
   openedAt: string;
+  closedAt: string | null;
   ruleBreaks: { id: string; rule: string }[];
   account?: { id: string; name: string } | null;
+  mae?: string | number | null;
+  mfe?: string | number | null;
 };
 
 type AccountOption = { id: string; name: string };
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function formatMinutes(minutes: number | null): string {
+  if (minutes === null) return "—";
+  if (minutes < 60) return `${Math.round(minutes)}m`;
+  if (minutes < 1440) return `${(minutes / 60).toFixed(1)}h`;
+  return `${(minutes / 1440).toFixed(1)}d`;
+}
 
 function rBucketLabel(r: number): string {
   if (r <= -3) return "≤-3R";
@@ -171,6 +181,37 @@ export function AnalyticsView({
     const avgWin = wins.length ? grossProfit / wins.length : 0;
     const avgLoss = losses.length ? grossLoss / losses.length : 0;
 
+    // Hold-time analytics (closed trades with both timestamps)
+    const holdMinutes = (trade: SerializedTrade) =>
+      trade.closedAt
+        ? (new Date(trade.closedAt).getTime() - new Date(trade.openedAt).getTime()) / 60000
+        : null;
+    const winHolds = filtered
+      .filter((trade) => Number(trade.rMultiple) > 0)
+      .map(holdMinutes)
+      .filter((m): m is number => m !== null && m >= 0);
+    const lossHolds = filtered
+      .filter((trade) => Number(trade.rMultiple) < 0)
+      .map(holdMinutes)
+      .filter((m): m is number => m !== null && m >= 0);
+    const avgHoldWin = winHolds.length ? winHolds.reduce((s, m) => s + m, 0) / winHolds.length : null;
+    const avgHoldLoss = lossHolds.length ? lossHolds.reduce((s, m) => s + m, 0) / lossHolds.length : null;
+
+    // MAE/MFE efficiency (only trades where the trader recorded excursions)
+    const excursions = filtered.filter(
+      (trade) => trade.mae !== null && trade.mae !== undefined && trade.mfe !== null && trade.mfe !== undefined,
+    );
+    const avgMae = excursions.length
+      ? excursions.reduce((s, trade) => s + Math.abs(Number(trade.mae)), 0) / excursions.length
+      : null;
+    const avgMfe = excursions.length
+      ? excursions.reduce((s, trade) => s + Number(trade.mfe), 0) / excursions.length
+      : null;
+    const captureRate =
+      avgMfe && avgMfe > 0 && excursions.length
+        ? excursions.reduce((s, trade) => s + Number(trade.rMultiple), 0) / excursions.length / avgMfe
+        : null;
+
     return {
       winRate: filtered.length ? wins.length / filtered.length : 0,
       profitFactor: grossLoss ? grossProfit / grossLoss : 0,
@@ -185,6 +226,12 @@ export function AnalyticsView({
       ruleBreaks: filtered.filter((trade) => trade.ruleBreaks.length > 0).length,
       maxWinStreak,
       maxLossStreak,
+      avgHoldWin,
+      avgHoldLoss,
+      avgMae,
+      avgMfe,
+      captureRate,
+      excursionSamples: excursions.length,
       equityCurve,
       drawdownCurve,
       rDistribution,
@@ -310,7 +357,16 @@ export function AnalyticsView({
               <div className="flex justify-between"><span className="text-[var(--muted)]">{t("Avg loss")}</span><span className="font-semibold">-{stats.avgLoss.toFixed(2)}R</span></div>
               <div className="flex justify-between"><span className="text-[var(--muted)]">{t("Payoff ratio")}</span><span className="font-semibold">{stats.payoff.toFixed(2)}</span></div>
               <div className="flex justify-between"><span className="text-[var(--muted)]">{t("Max Drawdown")}</span><span className="font-semibold text-[var(--red)]">{formatCurrency(stats.maxDrawdown)}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--muted)]">{t("Avg hold (win)")}</span><span className="font-semibold">{formatMinutes(stats.avgHoldWin)}</span></div>
+              <div className="flex justify-between"><span className="text-[var(--muted)]">{t("Avg hold (loss)")}</span><span className="font-semibold">{formatMinutes(stats.avgHoldLoss)}</span></div>
             </div>
+            {stats.excursionSamples > 0 && (
+              <div className="num mt-3 grid grid-cols-3 gap-2 border-t border-[var(--line)] pt-3 text-[12px]">
+                <div className="flex flex-col"><span className="text-[var(--muted)]">{t("Avg MAE")}</span><span className="font-semibold text-[var(--red)]">-{(stats.avgMae ?? 0).toFixed(2)}R</span></div>
+                <div className="flex flex-col"><span className="text-[var(--muted)]">{t("Avg MFE")}</span><span className="font-semibold text-[var(--teal-dark)]">+{(stats.avgMfe ?? 0).toFixed(2)}R</span></div>
+                <div className="flex flex-col"><span className="text-[var(--muted)]">{t("Capture rate")}</span><span className="font-semibold">{stats.captureRate === null ? "—" : formatPercent(Math.max(0, stats.captureRate))}</span></div>
+              </div>
+            )}
           </Surface>
         </div>
       </div>

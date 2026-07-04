@@ -56,6 +56,8 @@ type SerializedTrade = {
   review: { id: string; score: number; lesson: string; actionItem: string | null } | null;
   opportunity: { id: string; ticker: string; setupName: string } | null;
   account: { id: string; name: string; platform: string; currency: string } | null;
+  mae: string | number | null;
+  mfe: string | number | null;
 };
 
 type AccountOption = { id: string; name: string };
@@ -523,6 +525,8 @@ function TradeModal({
   const [openedAt, setOpenedAt] = useState(initialOpenedAt);
   const [closedAt, setClosedAt] = useState(initialClosedAt);
   const [accountId, setAccountId] = useState(trade.account?.id ?? "");
+  const [mae, setMae] = useState(trade.mae === null ? 0 : Number(trade.mae));
+  const [mfe, setMfe] = useState(trade.mfe === null ? 0 : Number(trade.mfe));
 
   // Context tab state
   const [notes, setNotes] = useState(trade.notes ?? "");
@@ -583,6 +587,8 @@ function TradeModal({
         ...(openedAt !== initialOpenedAt ? { openedAt: new Date(openedAt) } : {}),
         ...(closedAt !== initialClosedAt && closedAt ? { closedAt: new Date(closedAt) } : {}),
         ...(accountId !== (trade.account?.id ?? "") ? { accountId } : {}),
+        mae,
+        mfe,
         notes,
         ruleBreaksToAdd: newBreaks.map((rule) => ({ rule, severity: 1 })),
         ruleBreakIdsToRemove: removedIds,
@@ -734,6 +740,8 @@ function TradeModal({
               <NumberField label={t("Fees ($)")} value={fees} onChange={setFees} step="0.01" />
               <DateTimeField label={t("Opened At")} value={openedAt} onChange={setOpenedAt} />
               <DateTimeField label={t("Closed At")} value={closedAt} onChange={setClosedAt} />
+              <NumberField label={<span className="inline-flex items-center gap-1">{t("MAE (R)")} <HelpTip content={t("Maximum adverse excursion: the worst the trade went against you, in R.")} /></span>} value={mae} onChange={setMae} step="0.1" />
+              <NumberField label={<span className="inline-flex items-center gap-1">{t("MFE (R)")} <HelpTip content={t("Maximum favorable excursion: the best the trade went in your favor, in R.")} /></span>} value={mfe} onChange={setMfe} step="0.1" />
             </div>
           )}
 

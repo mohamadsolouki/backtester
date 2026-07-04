@@ -35,6 +35,8 @@ const createTradeSchema = z.object({
   accountId: z.string().optional(),
   stopPrice: z.number().positive().optional(),
   takeProfit: z.number().positive().optional(),
+  mae: z.number().optional(),
+  mfe: z.number().optional(),
   ruleBreaks: z
     .array(
       z.object({
@@ -70,6 +72,8 @@ export async function createTrade(input: z.input<typeof createTradeSchema>) {
       accountId: data.accountId || undefined,
       stopPrice: data.stopPrice,
       takeProfit: data.takeProfit,
+      mae: data.mae,
+      mfe: data.mfe,
       ruleBreaks: data.ruleBreaks?.length
         ? { create: data.ruleBreaks }
         : undefined,
@@ -235,6 +239,8 @@ export async function updateTrade(
         ...(fields.takeProfit !== undefined
           ? { takeProfit: fields.takeProfit }
           : {}),
+        ...(fields.mae !== undefined ? { mae: fields.mae } : {}),
+        ...(fields.mfe !== undefined ? { mfe: fields.mfe } : {}),
       },
     });
     if (ruleBreakIdsToRemove?.length) {
