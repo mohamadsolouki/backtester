@@ -8,6 +8,7 @@ import { formatCurrency, cn } from "@/lib/utils";
 import { positionSize, pipSize, classifySymbol } from "@/lib/forex";
 import { defaultTickers } from "@/lib/domain";
 import { useI18n } from "@/components/layout/i18n-provider";
+import { SessionClock } from "@/components/modules/session-clock";
 
 type AccountItem = {
   id: string;
@@ -46,9 +47,12 @@ export function RiskView({
       eyebrow={t("Plan")}
       description={t("Position sizing and prop-firm rule tracking. Size every trade from risk, not from feel.")}
     >
-      <div className="grid grid-cols-2 gap-2 max-[1000px]:grid-cols-1">
-        <PositionSizeCalculator accounts={accounts} defaultRiskPercent={defaultRiskPercent} />
-        <PropFirmTracker accounts={accounts} trades={trades} />
+      <div className="space-y-2">
+        <SessionClock />
+        <div className="grid grid-cols-2 gap-2 max-[1000px]:grid-cols-1">
+          <PositionSizeCalculator accounts={accounts} defaultRiskPercent={defaultRiskPercent} />
+          <PropFirmTracker accounts={accounts} trades={trades} />
+        </div>
       </div>
     </ModuleShell>
   );
