@@ -55,18 +55,18 @@ Commit pending working-tree changes; land this plan in the repo.
 - Prop-firm rule tracker: account size, max daily loss, max total drawdown, profit target → live status vs. rules.
 - Risk status surfaced on Overview.
 
-### Phase 6 — Backtest Lab (real)
+### Phase 6 — Backtest Lab (real) ✅ shipped
 - OHLC CSV upload (any timeframe) into a `PriceSeries` store.
 - Rule-based strategy definitions (EMA cross, breakout, session filter) run against series; results feed the same analytics components.
 - Compare backtest vs. live edge for the same playbook setup.
 
-### Phase 7 — Journal depth
+### Phase 7 — Journal depth ✅ shipped (MAE/MFE, hold-time)
 - MAE/MFE per trade, hold-time analytics, tag-based filtering, calendar view of trading days, richer review workflow (weekly review wizard).
 
-### Phase 8 — Reports & export
+### Phase 8 — Reports & export ✅ shipped (snapshots, CSV)
 - One-click weekly/monthly report generation (PDF/CSV), prop-firm compliance report, shareable read-only report links.
 
-### Phase 9 — Market context
+### Phase 9 — Market context ✅ shipped (session clock; economic calendar pending)
 - Economic calendar import (CSV/ICS adapters), news-window flags on trades, session clock for forex sessions (Sydney/Tokyo/London/NY).
 
 ### Phase 10 — Platform polish
@@ -77,3 +77,7 @@ Commit pending working-tree changes; land this plan in the repo.
 Accounts (P1) unblock everything: imports need a destination, analytics need per-account equity, risk rules are account-scoped. Import breadth (P2) + webhooks (P3) capture data from all three trader groups. Analytics (P4) and risk (P5) turn that data into decisions. Backtesting (P6+) extends from journal-of-record to research platform.
 
 Each phase ships independently and is committed to git on completion.
+
+## i18n status
+
+All 8 locales (en, fa, ar, es, fr, de, tr, pt) carry full dictionaries (~635 keys) covering every UI string, tooltip, and Help Center article. `npm run check-i18n` verifies fa/ar parity and per-locale coverage.
