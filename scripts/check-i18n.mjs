@@ -29,7 +29,96 @@ function readKeys(name) {
   const body = readConstObject(name);
   if (!body) return null;
 
-  return new Set([...body.matchAll(/^\s*"((?:\\.|[^"\\])+)":/gm)].map((match) => match[1]));
+  return new Set([...body.matchAll(/^\s*"((?:\\.|[^"\\])+)":/gm)].map((match) => decodeStringLiteral(`"${match[1]}"`)));
+}
+
+function decodeStringLiteral(literal) {
+  // The script only evaluates string literals from this repository.
+  return Function(`return ${literal}`)();
+}
+
+function normalizeKey(value) {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function mergeSets(...sets) {
+  return new Set(sets.flatMap((set) => [...(set ?? [])]));
+}
+
+function listSourceFiles(dir) {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const fullPath = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) return listSourceFiles(fullPath);
+    return /\.(ts|tsx)$/.test(entry.name) ? [fullPath] : [];
+  });
+}
+
+function readLiteralTKeys() {
+  const keys = new Set();
+  for (const path of listSourceFiles("src")) {
+    const content = fs.readFileSync(path, "utf8");
+    for (const match of content.matchAll(/\bt\(\s*(["'`])((?:\\.|(?!\1)[\s\S])*?)\1/g)) {
+      if (match[1] === "`" && match[2].includes("${")) continue;
+      const value = normalizeKey(decodeStringLiteral(`${match[1]}${match[2]}${match[1]}`));
+      if (value) keys.add(value);
+    }
+  }
+  return keys;
+}
+
+function readStringArrayValues(path, name) {
+  const content = fs.readFileSync(path, "utf8");
+  const match = content.match(new RegExp(`export const ${name} = \\[([\\s\\S]*?)\\] as const;`));
+  if (!match) return [];
+  return [...match[1].matchAll(/(["'`])((?:\\.|(?!\1)[\s\S])*?)\1/g)]
+    .map((item) => normalizeKey(decodeStringLiteral(`${item[1]}${item[2]}${item[1]}`)))
+    .filter(Boolean);
+}
+
+function readRecordStringValues(path, name) {
+  const content = fs.readFileSync(path, "utf8");
+  const match = content.match(new RegExp(`(?:export\\s+)?const ${name}[^=]*= \\{([\\s\\S]*?)\\n\\};`));
+  if (!match) return [];
+  return [...match[1].matchAll(/:\s*(["'`])((?:\\.|(?!\1)[\s\S])*?)\1/g)]
+    .map((item) => normalizeKey(decodeStringLiteral(`${item[1]}${item[2]}${item[1]}`)))
+    .filter(Boolean);
+}
+
+function readPropertyStringValues(path, propertyNames) {
+  const content = fs.readFileSync(path, "utf8");
+  const propertyPattern = propertyNames.join("|");
+  return [...content.matchAll(new RegExp(`\\b(?:${propertyPattern}):\\s*(["'\`])((?:\\\\.|(?!\\1)[\\s\\S])*?)\\1`, "g"))]
+    .map((item) => normalizeKey(decodeStringLiteral(`${item[1]}${item[2]}${item[1]}`)))
+    .filter(Boolean);
+}
+
+function readDateRangeLabels() {
+  const content = fs.readFileSync("src/lib/date-range.ts", "utf8");
+  return [...content.matchAll(/\blabel:\s*(["'`])((?:\\.|(?!\1)[\s\S])*?)\1/g)]
+    .map((item) => normalizeKey(decodeStringLiteral(`${item[1]}${item[2]}${item[1]}`)))
+    .filter(Boolean);
+}
+
+function readHelpItemValues() {
+  const content = fs.readFileSync("src/lib/help-content.ts", "utf8");
+  return [...content.matchAll(/\bitems:\s*\[([\s\S]*?)\]/g)]
+    .flatMap((match) => [...match[1].matchAll(/(["'`])((?:\\.|(?!\1)[\s\S])*?)\1/g)])
+    .map((item) => normalizeKey(decodeStringLiteral(`${item[1]}${item[2]}${item[1]}`)))
+    .filter(Boolean);
+}
+
+function requiredTranslationKeys() {
+  return mergeSets(
+    readLiteralTKeys(),
+    new Set(readRecordStringValues("src/lib/domain.ts", "platformLabels")),
+    new Set(readStringArrayValues("src/lib/domain.ts", "contextTagNames")),
+    new Set(readStringArrayValues("src/lib/domain.ts", "skipReasons")),
+    new Set(readDateRangeLabels()),
+    new Set(readRecordStringValues("src/components/modules/backtest-lab.tsx", "STRATEGY_LABELS")),
+    new Set(readPropertyStringValues("src/lib/help-content.ts", ["title", "body", "label", "tagline", "heading"])),
+    new Set(readHelpItemValues()),
+    new Set(readRecordStringValues("src/lib/help-content.ts", "helpTips"))
+  );
 }
 
 const localesMatch = source.match(/export const locales = \[([^\]]+)\] as const;/);
@@ -69,5 +158,25 @@ if (!faKeys || !arKeys) {
       continue;
     }
     console.log(`${locale} core coverage: ${keys.size}/${baseline} keys`);
+  }
+}
+
+const requiredKeys = requiredTranslationKeys();
+for (const locale of locales.filter((item) => item !== "en")) {
+  const keys = locale === "fa"
+    ? mergeSets(readKeys("fa"), readKeys("faCasual"))
+    : locale === "ar"
+      ? mergeSets(readKeys("ar"), readKeys("arCasual"))
+      : readKeys(locale);
+  if (!keys) {
+    fail(`could not read ${locale} merged dictionary`);
+    continue;
+  }
+
+  const missing = [...requiredKeys].filter((key) => !keys.has(key));
+  if (missing.length) {
+    fail(`${locale} is missing ${missing.length} required UI keys: ${missing.slice(0, 20).join(", ")}`);
+  } else {
+    console.log(`${locale} required UI coverage: ${requiredKeys.size}/${requiredKeys.size} keys`);
   }
 }

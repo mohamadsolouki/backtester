@@ -234,7 +234,7 @@ function AccountsPanel({ accounts }: { accounts: AccountItem[] }) {
             className={inputClass}
           >
             {PLATFORMS.map((p) => (
-              <option key={p} value={p}>{platformLabels[p]}</option>
+              <option key={p} value={p}>{t(platformLabels[p])}</option>
             ))}
           </select>
           <input
@@ -276,7 +276,7 @@ function AccountsPanel({ accounts }: { accounts: AccountItem[] }) {
                 <div>
                   <span className="font-semibold">{account.name}</span>
                   <span className="ms-2 rounded-sm border border-[var(--line)] px-1.5 py-0.5 text-[10px] font-semibold uppercase text-[var(--muted)]">
-                    {platformLabels[account.platform] ?? account.platform}
+                    {t(platformLabels[account.platform] ?? account.platform)}
                   </span>
                 </div>
               </div>
